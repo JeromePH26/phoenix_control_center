@@ -117,7 +117,7 @@ export const NAV_TREE: NavGroup[] = [
     label: "App Control",
     enabled: false,
     children: [
-      { label: "App Status", enabled: false },
+      { label: "App Status", href: "/app-control/status", enabled: true },
       { label: "Module", enabled: false },
       { label: "Feature Flags", enabled: false },
       { label: "Wartungsmodus", enabled: false },
@@ -130,8 +130,8 @@ export const NAV_TREE: NavGroup[] = [
     label: "Infrastructure",
     enabled: false,
     children: [
-      { label: "API Usage", enabled: false },
-      { label: "Jobs", enabled: false },
+      { label: "API Usage", href: "/infrastructure/api-usage", enabled: true },
+      { label: "Jobs", href: "/infrastructure/jobs", enabled: true },
       { label: "Railway", enabled: false },
       { label: "Database", enabled: false },
       { label: "Storage", enabled: false },

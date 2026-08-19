@@ -142,6 +142,51 @@ export interface FootballAsset {
 
 export type SettlementJobStatus = "running" | "completed" | "failed" | string;
 
+// --- Jobs / API Usage / App Control (control-center session auth) ---
+// Backend returns raw DB column names here (unlike the Football domain,
+// which maps to camelCase - see lib/settlementJob.ts) since these three
+// endpoints call PhoenixDatabase methods directly and pass rows through
+// ControlCenterRoutes._jsonSafe without a rename step.
+
+export interface JobRow {
+  id: number | string;
+  status: string;
+  created_at?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  error?: string | null;
+  last_error?: string | null;
+  [key: string]: unknown;
+}
+
+export interface JobsPayload {
+  dailyPipeline: JobRow[];
+  settlement: JobRow[];
+  learningRuns: JobRow[];
+}
+
+export interface ApiUsageRow {
+  api_name: string;
+  usage_date: string;
+  requests: number;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ApiUsagePayload {
+  today: ApiUsageRow[];
+  history: ApiUsageRow[];
+}
+
+export type AppControlStatusValue = "ACTIVE" | "MAINTENANCE" | "DISABLED";
+
+export interface AppControlStatus {
+  status: AppControlStatusValue | string;
+  message?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
 export interface SettlementJob {
   id: number;
   status: SettlementJobStatus;
