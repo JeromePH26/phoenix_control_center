@@ -100,13 +100,16 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
-      <div className="flex h-14 items-center gap-2 border-b border-neutral-200 px-4">
-        <span className="flex h-6 w-6 items-center justify-center rounded bg-neutral-900 text-xs font-bold text-phoenix-gold">
-          P
-        </span>
-        <span className="text-sm font-semibold tracking-wide text-neutral-900">
-          CONTROL CENTER
-        </span>
+      <div className="flex flex-col justify-center gap-0.5 border-b border-neutral-200 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded bg-neutral-900 text-xs font-bold text-phoenix-gold">
+            P
+          </span>
+          <span className="text-sm font-semibold tracking-wide text-neutral-900">
+            CONTROL CENTER
+          </span>
+        </div>
+        <span className="pl-8 text-[10px] text-neutral-400">Powered by Jerome Böckel</span>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
         {NAV_TREE.map((group) => (

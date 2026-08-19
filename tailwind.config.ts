@@ -12,9 +12,9 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         "phoenix-gold": {
-          DEFAULT: "#C9A227",
-          light: "#E4C766",
-          dark: "#9A7B1C",
+          DEFAULT: "#0D9488",
+          light: "#5EEAD4",
+          dark: "#0F766E",
         },
       },
       fontFamily: {
