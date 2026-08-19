@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
+import JsonViewer from "@/components/ui/JsonViewer";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import FlagChangeDialog from "@/components/FlagChangeDialog";
@@ -14,12 +16,12 @@ type LoadState = "loading" | "loaded" | "unreachable" | "notfound" | "error";
 
 type FlagKey = "visible" | "analysisEnabled" | "tipEnabled" | "learningEnabled" | "liveEnabled";
 
-const FLAGS: { key: FlagKey; label: string }[] = [
-  { key: "visible", label: "Sichtbar" },
-  { key: "analysisEnabled", label: "Analyse aktiviert" },
-  { key: "tipEnabled", label: "Tipp aktiviert" },
-  { key: "learningEnabled", label: "Learning aktiviert" },
-  { key: "liveEnabled", label: "Live aktiviert" },
+const FLAGS: { key: FlagKey; label: string; info: string }[] = [
+  { key: "visible", label: "Sichtbar", info: "Aus = Nutzer sehen dieses Spiel gar nicht in der App." },
+  { key: "analysisEnabled", label: "Analyse aktiviert", info: "Aus = PHÖNIX berechnet keine Prognose/Wahrscheinlichkeiten mehr für dieses Spiel." },
+  { key: "tipEnabled", label: "Tipp aktiviert", info: "Aus = für dieses Spiel wird kein PHÖNIX-Tipp mehr angezeigt, auch wenn eine Analyse vorliegt." },
+  { key: "learningEnabled", label: "Learning aktiviert", info: "Aus = dieses Spiel fließt nicht ins automatische Lernen/Verbessern der Modelle ein." },
+  { key: "liveEnabled", label: "Live aktiviert", info: "Aus = keine Live-Aktualisierungen (Tore, Karten) für dieses einzelne Spiel." },
 ];
 
 const KNOWN_KEYS = new Set([
@@ -104,9 +106,20 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
-  const extra = match
-    ? Object.fromEntries(Object.entries(match).filter(([k]) => !KNOWN_KEYS.has(k)))
-    : {};
+  // Felder, die zwar vom Backend mitgeschickt werden, aber für niemanden
+  // hier lesbar/nützlich sind (z.B. der komplette rohe API-Football-JSON-
+  // Blob) - die werden komplett ausgeblendet statt als unlesbarer Text
+  // angezeigt.
+  const HIDDEN_EXTRA_FIELDS = new Set(["rawJson", "raw_json"]);
+  const extraEntries = match
+    ? Object.entries(match).filter(([k]) => !KNOWN_KEYS.has(k) && !HIDDEN_EXTRA_FIELDS.has(k))
+    : [];
+  const extraScalar = Object.fromEntries(extraEntries.filter(([, v]) => v === null || typeof v !== "object"));
+  const extraObjects = extraEntries.filter(([, v]) => v !== null && typeof v === "object");
+  const spacedLabel = (key: string) => {
+    const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/_/g, " ");
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -177,6 +190,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-neutral-700">{flag.label}</span>
+                      <InfoTooltip text={flag.info} />
                       <Badge tone={value ? "green" : "neutral"}>{value ? "An" : "Aus"}</Badge>
                     </div>
                     <Button
@@ -194,8 +208,20 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
           </Card>
 
-          <Card title="Weitere Daten">
-            <KeyValueList data={extra} />
+          <Card
+            title="Weitere Daten"
+            action={
+              <InfoTooltip text="Zusätzliche technische Felder aus dem Backend, die oben nicht extra aufgeführt sind. Für den Alltag meist nicht relevant." />
+            }
+          >
+            <KeyValueList data={extraScalar} />
+            {extraObjects.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-4">
+                {extraObjects.map(([key, value]) => (
+                  <JsonViewer key={key} value={value} label={spacedLabel(key)} />
+                ))}
+              </div>
+            )}
           </Card>
         </>
       )}

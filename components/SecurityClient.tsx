@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { AdminSession, FailedLoginAttempt } from "@/lib/types";
@@ -80,10 +81,14 @@ export default function SecurityClient() {
 
   const sessionColumns: Column<AdminSession>[] = [
     { header: "Mitarbeiter", cell: (s) => `${s.employee_name} (${s.employee_login})` },
-    { header: "IP", cell: (s) => fmt(s.ip) },
-    { header: "Gerät", cell: (s) => <span className="text-xs text-neutral-500">{fmt(s.user_agent)}</span> },
+    { header: "IP", info: "Die Internet-Adresse des Geräts, von dem aus eingeloggt wurde.", cell: (s) => fmt(s.ip) },
+    {
+      header: "Gerät",
+      info: "Technische Kennung von Browser/Betriebssystem, mit dem eingeloggt wurde.",
+      cell: (s) => <span className="text-xs text-neutral-500">{fmt(s.user_agent)}</span>,
+    },
     { header: "Erstellt", cell: (s) => fmt(s.created_at) },
-    { header: "Läuft ab", cell: (s) => fmt(s.expires_at) },
+    { header: "Läuft ab", info: "Nach diesem Zeitpunkt ist die Sitzung automatisch ungültig, auch ohne manuelles Beenden.", cell: (s) => fmt(s.expires_at) },
     {
       header: "",
       cell: (s) => (
@@ -96,14 +101,17 @@ export default function SecurityClient() {
 
   const failedColumns: Column<FailedLoginAttempt>[] = [
     { header: "Login", cell: (f) => f.login },
-    { header: "IP", cell: (f) => fmt(f.ip) },
+    { header: "IP", info: "Die Internet-Adresse, von der aus der Login-Versuch kam.", cell: (f) => fmt(f.ip) },
     { header: "Zeitpunkt", cell: (f) => fmt(f.attempted_at) },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Security</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Security
+          <InfoTooltip text="Wer gerade eingeloggt ist (aktive Sitzungen) und wer sich zuletzt erfolglos einzuloggen versucht hat." />
+        </h1>
         <p className="text-sm text-neutral-400">
           Aktive Sessions und fehlgeschlagene Login-Versuche. 2FA und Geräteerkennung sind noch nicht umgesetzt.
         </p>

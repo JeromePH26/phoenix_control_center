@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AdCampaign } from "@/lib/types";
 
@@ -159,7 +160,10 @@ export default function CampaignDetailClient({ id }: { id: string }) {
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{campaign.clicks}</p>
                 </div>
                 <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
-                  <p className="text-xs text-neutral-500">CTR</p>
+                  <p className="flex items-center gap-1 text-xs text-neutral-500">
+                    CTR
+                    <InfoTooltip text="Click-Through-Rate: Anteil der Anzeigen, die zu einem Klick geführt haben. Höher = die Werbung funktioniert besser." />
+                  </p>
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{ctr ? `${ctr}%` : "–"}</p>
                 </div>
               </div>

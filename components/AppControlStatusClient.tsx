@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
@@ -98,10 +99,13 @@ export default function AppControlStatusClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">App Status</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          App Status
+          <InfoTooltip text="Der zentrale Schalter für die ganze App. Bei Wartung oder einem Notfall kann hier die gesamte App für alle Nutzer auf 'Wartung' oder 'Abgeschaltet' gestellt werden." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Zentraler App-Status (ACTIVE / MAINTENANCE / DISABLED). Wird von der PHÖNIX-App derzeit noch nicht gelesen
-          — die Anbindung ist ein separater, noch nicht umgesetzter Schritt.
+          Zentraler App-Status: Aktiv (normaler Betrieb) / Wartungsmodus (App zeigt Nutzern einen Hinweis) / Abgeschaltet.
+          Die App fragt diesen Status regelmäßig beim Start und alle 5 Minuten ab.
         </p>
       </div>
 
@@ -124,6 +128,9 @@ export default function AppControlStatusClient() {
                 Nachricht: status.message ?? null,
                 "Zuletzt geändert": status.updated_at ?? null,
                 "Geändert von": status.updated_by ?? null,
+              }}
+              info={{
+                Nachricht: "Text, der Nutzern in der App angezeigt wird, z.B. ein Hinweis während der Wartung.",
               }}
             />
           </Card>

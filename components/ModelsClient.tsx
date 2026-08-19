@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { ModelVersion } from "@/lib/types";
 
@@ -64,9 +65,21 @@ export default function ModelsClient() {
     { header: "Version", cell: (m) => <span className="font-medium text-neutral-900">{m.readable_version}</span> },
     { header: "Liga", cell: (m) => fmt(m.league_id ?? "GLOBAL") },
     { header: "Markt", cell: (m) => fmt(m.market) },
-    { header: "Status", cell: (m) => <Badge tone={statusTone(m.status)}>{m.status}</Badge> },
-    { header: "Generation", cell: (m) => fmt(m.generation) },
-    { header: "Training-Samples", cell: (m) => fmt(m.training_count) },
+    {
+      header: "Status",
+      info: "champion = aktuell aktives Modell, das echte Tipps beeinflusst. challenger = Herausforderer, wird nur zum Vergleich getestet. retired = ausgemustert, nicht mehr aktiv.",
+      cell: (m) => <Badge tone={statusTone(m.status)}>{m.status}</Badge>,
+    },
+    {
+      header: "Generation",
+      info: "Zählt, wie oft dieses Modell aus einem Vorgänger weiterentwickelt wurde. 1 = erste Version, 2 = einmal verbessert, usw.",
+      cell: (m) => fmt(m.generation),
+    },
+    {
+      header: "Training-Samples",
+      info: "Anzahl vergangener Spiele, mit denen dieses Modell trainiert (angelernt) wurde. Mehr Spiele = in der Regel verlässlichere Vorhersagen.",
+      cell: (m) => fmt(m.training_count),
+    },
     { header: "Erstellt", cell: (m) => fmt(m.created_at) },
   ];
 
@@ -78,7 +91,10 @@ export default function ModelsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          {title}
+          <InfoTooltip text="Vorhersage-Modelle, die PHÖNIX für Tipps nutzt. Champion = aktuell aktiv, Challenger = wird getestet, um den Champion evtl. abzulösen." />
+        </h1>
         <p className="text-sm text-neutral-400">{description}</p>
       </div>
 

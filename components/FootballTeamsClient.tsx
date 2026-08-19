@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { FootballAsset } from "@/lib/types";
 
@@ -54,14 +55,17 @@ export default function FootballTeamsClient() {
   const columns: Column<FootballAsset>[] = [
     { header: "Team", cell: (t) => <span className="font-medium text-neutral-900">{t.entityName ?? t.id}</span> },
     { header: "ID", cell: (t) => t.id },
-    { header: "Wappen-Status", cell: (t) => <Badge tone={statusTone(t.status)}>{t.status}</Badge> },
+    { header: "Wappen-Status", info: "OK = Logo vorhanden. MISSING = fehlt. STALE = veraltet, sollte aktualisiert werden.", cell: (t) => <Badge tone={statusTone(t.status)}>{t.status}</Badge> },
     { header: "Aktualisiert", cell: (t) => t.updatedAt ?? "–" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Teams</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Teams
+          <InfoTooltip text="Übersicht aller bekannten Fußball-Mannschaften und ob ihr Wappen (Logo) korrekt hinterlegt ist." />
+        </h1>
         <p className="text-sm text-neutral-400">
           Team-Übersicht, abgeleitet aus dem Wappen- &amp; Asset-Bestand. Für Kader- oder Stammdaten steht noch
           kein eigener Endpunkt zur Verfügung.

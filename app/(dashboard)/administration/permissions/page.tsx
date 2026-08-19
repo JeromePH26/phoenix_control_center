@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -25,10 +26,13 @@ export default async function PermissionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Rechte</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Rechte
+          <InfoTooltip text="Übersicht, welche Rolle standardmäßig was darf. Ein Häkchen bedeutet: Mitarbeiter mit dieser Rolle dürfen das." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Standard-Berechtigungen je Rolle. OWNER hat immer alle Rechte. Individuelle Overrides werden pro
-          Mitarbeiter in der Mitarbeiterverwaltung gesetzt.
+          Standard-Berechtigungen je Rolle. OWNER hat immer alle Rechte. Individuelle Overrides (persönliche
+          Ausnahmen für einzelne Mitarbeiter) werden pro Mitarbeiter in der Mitarbeiterverwaltung gesetzt.
         </p>
       </div>
 
@@ -44,7 +48,12 @@ export default async function PermissionsPage() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500">
-                <th className="px-4 py-2 font-medium">Recht</th>
+                <th className="px-4 py-2 font-medium">
+                  <span className="inline-flex items-center gap-1">
+                    Recht
+                    <InfoTooltip text="Technischer Code für eine einzelne Berechtigung im System (z.B. 'employees.view' = darf Mitarbeiterliste sehen)." />
+                  </span>
+                </th>
                 {catalog.roles.map((role) => (
                   <th key={role} className="px-4 py-2 font-medium">
                     {role}

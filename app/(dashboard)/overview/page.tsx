@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
@@ -39,7 +40,10 @@ export default async function OverviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Overview</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Overview
+          <InfoTooltip text="Startseite mit dem aktuellen Gesamtzustand von PHÖNIX auf einen Blick." />
+        </h1>
         <p className="text-sm text-neutral-400">Aktueller Systemstatus von PHÖNIX.</p>
       </div>
 
@@ -68,7 +72,14 @@ export default async function OverviewPage() {
             <KeyValueList data={overview?.apiUsage ?? null} />
           </Card>
 
-          <Card title="Whitelist">
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Whitelist
+                <InfoTooltip text="Wie viele Ligen automatisch entschieden, manuell freigegeben (Whitelist) oder manuell gesperrt (Blacklist) sind." />
+              </span>
+            }
+          >
             {overview?.whitelist ? (
               <div className="grid grid-cols-3 gap-2">
                 <StatTile label="Auto" value={overview.whitelist.auto as number | null} />
@@ -80,11 +91,25 @@ export default async function OverviewPage() {
             )}
           </Card>
 
-          <Card title="Model Lab">
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Model Lab
+                <InfoTooltip text="Kennzahlen zu den selbstlernenden Vorhersage-Modellen von PHÖNIX." />
+              </span>
+            }
+          >
             <KeyValueList data={overview?.modelLab ?? null} />
           </Card>
 
-          <Card title="Pending Jobs">
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Pending Jobs
+                <InfoTooltip text="Hintergrund-Aufgaben, die gerade laufen oder noch nicht fertig sind." />
+              </span>
+            }
+          >
             <KeyValueList data={overview?.pendingJobs ?? null} />
           </Card>
         </div>

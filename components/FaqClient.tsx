@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
 import type { FaqArticle } from "@/lib/types";
@@ -90,8 +91,8 @@ export default function FaqClient() {
   const columns: Column<FaqArticle>[] = [
     { header: "Titel", cell: (a) => a.title },
     { header: "Kategorie", cell: (a) => a.category },
-    { header: "Position", cell: (a) => a.position },
-    { header: "Status", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
+    { header: "Position", info: "Reihenfolge in der Liste — kleinere Zahl erscheint weiter oben.", cell: (a) => a.position },
+    { header: "Status", info: "DRAFT = Entwurf, noch nicht sichtbar. PUBLISHED = live in der App. ARCHIVED = nicht mehr sichtbar.", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
     {
       header: "",
       cell: (a) => (
@@ -106,8 +107,11 @@ export default function FaqClient() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Hilfe / FAQ</h1>
-          <p className="text-sm text-neutral-400">Wissensdatenbank-Artikel, sortiert nach Kategorie und Position.</p>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+            Hilfe / FAQ
+            <InfoTooltip text="FAQ = 'Frequently Asked Questions' (häufig gestellte Fragen). Diese Einträge sieht der Nutzer im Hilfe-Bereich der App." />
+          </h1>
+          <p className="text-sm text-neutral-400">Wissensdatenbank-Artikel, sortiert nach Kategorie und Position (Reihenfolge).</p>
         </div>
         <Button
           onClick={() =>

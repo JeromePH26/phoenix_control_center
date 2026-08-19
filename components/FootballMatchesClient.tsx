@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { FootballMatch } from "@/lib/types";
 
@@ -126,10 +127,12 @@ export default function FootballMatchesClient() {
     },
     {
       header: "Sichtbar",
+      info: "Ob dieses Spiel in der App für Nutzer angezeigt wird.",
       cell: (m) => <Badge tone={m.visible ? "green" : "neutral"}>{m.visible ? "Ja" : "Nein"}</Badge>,
     },
     {
       header: "Analyse",
+      info: "Ob PHÖNIX für dieses Spiel bereits eine Analyse (Vorhersage/Tipp) erstellt hat.",
       cell: (m) => <Badge tone={m.hasAnalysis ? "green" : "neutral"}>{m.hasAnalysis ? "Ja" : "Nein"}</Badge>,
     },
   ];
@@ -137,9 +140,12 @@ export default function FootballMatchesClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Matches</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Matches
+          <InfoTooltip text="Alle bekannten Fußballspiele. Klicke auf ein Spiel für Details und um einzelne Funktionen (z.B. Sichtbarkeit, Live) an- oder auszuschalten." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Spielverwaltung: Sichtbarkeit, Analyse, Tipp, Learning- und Live-Flags.
+          Spielverwaltung: Sichtbarkeit, Analyse, Tipp, Lern- und Live-Funktionen je Spiel.
         </p>
       </div>
 
@@ -206,7 +212,7 @@ export default function FootballMatchesClient() {
           value={hasAnalysis}
           onChange={(v) => updateParam("hasAnalysis", v)}
         />
-        <BoolSelect id="settled" label="Settled" value={settled} onChange={(v) => updateParam("settled", v)} />
+        <BoolSelect id="settled" label="Settled (abgerechnet)" value={settled} onChange={(v) => updateParam("settled", v)} />
       </div>
 
       <Card>

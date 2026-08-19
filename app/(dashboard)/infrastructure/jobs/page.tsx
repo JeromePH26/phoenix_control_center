@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
@@ -68,21 +69,22 @@ export default async function JobsPage() {
 
   const dailyPipelineColumns: Column<JobRow>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
     { header: "Datum", cell: (j) => fmt(j.scan_date) },
-    { header: "Schritt", cell: (j) => fmt(j.current_step) },
-    { header: "Verarbeitet / Veröffentlicht", cell: (j) => `${fmt(j.processed)} / ${fmt(j.published)}` },
+    { header: "Schritt", info: "An welcher Stelle des Ablaufs sich der Job gerade befindet.", cell: (j) => fmt(j.current_step) },
+    { header: "Verarbeitet / Veröffentlicht", info: "Anzahl bereits bearbeiteter Datensätze / davon in der App sichtbar gemacht.", cell: (j) => `${fmt(j.processed)} / ${fmt(j.published)}` },
     { header: "Gestartet", cell: (j) => fmt(j.created_at) },
     { header: "Beendet", cell: (j) => fmt(j.completed_at) },
     { header: "Fehler", cell: (j) => (j.error ? <span className="text-red-600">{String(j.error)}</span> : "–") },
-    { header: "Details", cell: extraColumn },
+    { header: "Details", info: "Weitere technische Rohdaten zu diesem Lauf, aufklappbar.", cell: extraColumn },
   ];
 
   const settlementColumns: Column<JobRow>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
     {
       header: "Fortschritt",
+      info: "geprüft = angeschaut, abgerechnet = Tipp-Ergebnis final gebucht, offen = noch nicht dran, fehlgeschlagen = ging schief.",
       cell: (j) => `${fmt(j.checked)} geprüft · ${fmt(j.settled)} abgerechnet · ${fmt(j.pending)} offen · ${fmt(j.failed)} fehlgeschlagen`,
     },
     { header: "Gestartet", cell: (j) => fmt(j.created_at) },
@@ -95,11 +97,12 @@ export default async function JobsPage() {
 
   const learningRunColumns: Column<JobRow>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
-    { header: "Auslöser", cell: (j) => fmt(j.trigger_type) },
-    { header: "Schritt", cell: (j) => fmt(j.current_step) },
+    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Auslöser", info: "Was diesen Lauf gestartet hat — manuell durch einen Mitarbeiter oder automatisch nach Zeitplan.", cell: (j) => fmt(j.trigger_type) },
+    { header: "Schritt", info: "An welcher Stelle des Ablaufs sich der Job gerade befindet.", cell: (j) => fmt(j.current_step) },
     {
       header: "Ligen / Märkte / Challenger",
+      info: "Anzahl bearbeiteter Ligen / bearbeiteter Wett-Kategorien / neu erstellter Herausforderer-Modelle (die gegen das aktuell beste Modell antreten).",
       cell: (j) => `${fmt(j.leagues_processed)} / ${fmt(j.markets_processed)} / ${fmt(j.challengers_created)}`,
     },
     { header: "Gestartet", cell: (j) => fmt(j.started_at) },
@@ -110,9 +113,12 @@ export default async function JobsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Jobs</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Jobs
+          <InfoTooltip text="Automatische Hintergrund-Aufgaben, die PHÖNIX regelmäßig selbst ausführt (z.B. Spieldaten holen, Ergebnisse abrechnen)." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Letzte Läufe je Job-Typ: Daily-Pipeline (Football-Scan), Ergebnis-Settlement, Model-Lab-Learning.
+          Letzte Läufe je Job-Typ: Daily-Pipeline (täglicher Football-Datenabruf), Ergebnis-Settlement (Tipp-Abrechnung), Model-Lab-Learning (Lernvorgang der Vorhersage-Modelle).
         </p>
       </div>
 

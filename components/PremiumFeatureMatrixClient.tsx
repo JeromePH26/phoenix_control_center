@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { PremiumFeature } from "@/lib/types";
 
@@ -79,7 +80,7 @@ export default function PremiumFeatureMatrixClient() {
 
   const columns: Column<PremiumFeature>[] = [
     { header: "Feature", cell: (f) => <span className="font-medium text-neutral-900">{f.feature_label}</span> },
-    { header: "Aktuell", cell: (f) => <Badge tone={tierTone(f.tier)}>{f.tier}</Badge> },
+    { header: "Aktuell", info: "FREE = für alle nutzbar. PREMIUM = nur für zahlende Nutzer. DISABLED = für niemanden aktiv.", cell: (f) => <Badge tone={tierTone(f.tier)}>{f.tier}</Badge> },
     {
       header: "Ändern",
       cell: (f) => (
@@ -104,10 +105,13 @@ export default function PremiumFeatureMatrixClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Feature Matrix</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Feature Matrix
+          <InfoTooltip text="Legt fest, welche App-Funktionen kostenlos, nur mit Premium oder für niemanden verfügbar sind." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Server-seitige FREE/PREMIUM/DISABLED-Einstufung bereits implementierter Features. Wird von der App noch
-          nicht ausgelesen — Backend/Admin-Seite ist vorbereitet.
+          Einstufung bereits gebauter Funktionen in FREE (kostenlos) / PREMIUM (kostenpflichtig) / DISABLED
+          (deaktiviert). Wird von der App noch nicht ausgelesen — diese Seite ist vorbereitet für später.
         </p>
       </div>
 

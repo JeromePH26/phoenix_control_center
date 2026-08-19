@@ -1,11 +1,15 @@
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 
 export default function EmailCenterPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">E-Mail</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          E-Mail
+          <InfoTooltip text="Geplanter Bereich, um Firmen-E-Mails (z.B. support@) direkt hier im Control Center zu lesen und zu beantworten. Noch nicht aktiv." />
+        </h1>
         <p className="text-sm text-neutral-400">Zentrales PHÖNIX Mail-Center für persönliche und geteilte Postfächer.</p>
       </div>
 

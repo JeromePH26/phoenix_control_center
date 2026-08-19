@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { MonthlyReview } from "@/lib/types";
@@ -77,9 +78,9 @@ export default function ReviewsClient() {
     { header: "Zeitraum", cell: (r) => `${r.review_month}/${r.review_year}` },
     { header: "Liga", cell: (r) => fmt(r.league_id ?? "GLOBAL") },
     { header: "Markt", cell: (r) => r.market },
-    { header: "Champion", cell: (r) => fmt(r.champion_model_id) },
-    { header: "Challenger", cell: (r) => fmt(r.challenger_model_id) },
-    { header: "Sample", cell: (r) => fmt(r.same_match_sample) },
+    { header: "Champion", info: "ID des aktuell aktiven Modells für diese Liga × Markt-Kombination.", cell: (r) => fmt(r.champion_model_id) },
+    { header: "Challenger", info: "ID des Herausforderer-Modells, das mit dem Champion verglichen wurde.", cell: (r) => fmt(r.challenger_model_id) },
+    { header: "Sample", info: "Anzahl der Spiele, auf denen dieser Vergleich beruht.", cell: (r) => fmt(r.same_match_sample) },
     { header: "Empfehlung", cell: (r) => <Badge tone={recommendationTone(r.recommendation)}>{r.recommendation}</Badge> },
     { header: "Begründung", cell: (r) => fmt(r.reason) },
     { header: "Geprüft am", cell: (r) => fmt(r.reviewed_at) },
@@ -88,7 +89,10 @@ export default function ReviewsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Reviews</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Reviews
+          <InfoTooltip text="Einmal im Monat vergleicht PHÖNIX automatisch Champion und Challenger und gibt eine Empfehlung ab (z.B. 'befördern' oder 'behalten') — entschieden wird aber immer manuell." />
+        </h1>
         <p className="text-sm text-neutral-400">
           Monatliche Champion-Reviews. V0: keine automatische Promotion — Empfehlungen müssen manuell bestätigt werden.
         </p>

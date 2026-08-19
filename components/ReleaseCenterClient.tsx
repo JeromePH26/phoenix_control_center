@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { ReleaseConfig } from "@/lib/types";
 
@@ -74,7 +75,10 @@ export default function ReleaseCenterClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Release Center</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Release Center
+          <InfoTooltip text="Verwaltet, welche App-Version aktuell ist und ob ältere Versionen zum Update gezwungen werden." />
+        </h1>
         <p className="text-sm text-neutral-400">
           Aktuelle Version und Mindestversion. Kein echtes &quot;Nutzer pro Version&quot;-Tracking — dafür gibt es keine
           App-Telemetrie. Noch nicht von der App ausgelesen.
@@ -105,7 +109,12 @@ export default function ReleaseCenterClient() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Mindestversion</label>
+                <label className={labelClass}>
+                  <span className="inline-flex items-center gap-1">
+                    Mindestversion
+                    <InfoTooltip text="Nutzer mit einer älteren App-Version als dieser gelten als veraltet (relevant für 'Forced Update')." />
+                  </span>
+                </label>
                 <input
                   className={inputClass}
                   value={config.minimum_supported_version ?? ""}
@@ -128,7 +137,7 @@ export default function ReleaseCenterClient() {
                 checked={config.forced_update}
                 onChange={(e) => setConfig({ ...config, forced_update: e.target.checked })}
               />
-              Forced Update (Nutzer unter Mindestversion müssen aktualisieren)
+              Forced Update (Nutzer unter Mindestversion müssen aktualisieren, bevor sie die App weiter nutzen können)
             </label>
           </div>
 

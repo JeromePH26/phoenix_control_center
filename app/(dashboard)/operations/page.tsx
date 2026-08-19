@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -47,7 +48,10 @@ export default async function OperationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">PHÖNIX Operations</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          PHÖNIX Operations
+          <InfoTooltip text="Eine Kachel-Übersicht, die dir sofort zeigt, wo gerade etwas ansteht — grün heißt alles gut, rot/gold heißt: hinschauen." />
+        </h1>
         <p className="text-sm text-neutral-400">Was gerade Aufmerksamkeit braucht — auf einen Blick.</p>
       </div>
 

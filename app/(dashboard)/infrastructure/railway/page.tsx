@@ -1,12 +1,16 @@
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 
 export default function RailwayStatusPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Railway</h1>
-        <p className="text-sm text-neutral-400">Deployment- und Service-Status der Railway-Infrastruktur.</p>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Railway
+          <InfoTooltip text="Railway ist der externe Dienstleister, bei dem der PHÖNIX-Server und die Datenbank laufen (vergleichbar mit einem Hosting-Anbieter)." />
+        </h1>
+        <p className="text-sm text-neutral-400">Status: läuft der Server/die Datenbank gerade und wann wurde zuletzt etwas ausgerollt.</p>
       </div>
 
       <Card title="Status" action={<Badge tone="red">NOT CONFIGURED</Badge>}>

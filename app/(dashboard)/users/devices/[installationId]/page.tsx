@@ -3,6 +3,7 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
@@ -58,7 +59,10 @@ export default async function DeviceDetailPage({ params }: { params: { installat
         <Link href="/users/devices" className="text-xs text-neutral-400 hover:text-neutral-600">
           ← Zurück zu Geräten
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">Gerät</h1>
+        <h1 className="mt-1 flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Gerät
+          <InfoTooltip text="Details zu einer einzelnen App-Installation, inklusive der Support-Tickets, die von diesem Gerät kamen." />
+        </h1>
       </div>
 
       {errorState === "unreachable" && (
@@ -84,6 +88,10 @@ export default async function DeviceDetailPage({ params }: { params: { installat
                 Erstellt: device.created_at,
                 Aktualisiert: device.updated_at,
                 "Zuletzt gesehen": device.last_seen_at,
+              }}
+              info={{
+                "Installation-ID": "Eindeutige, anonyme Kennung für diese App-Installation (kein Nutzerkonto).",
+                "News-Push": "Ob dieses Gerät Push-Benachrichtigungen für News erhält.",
               }}
             />
           </Card>

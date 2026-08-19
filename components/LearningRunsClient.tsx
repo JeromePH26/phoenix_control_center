@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { LearningRun } from "@/lib/types";
 
@@ -54,10 +55,14 @@ export default function LearningRunsClient() {
   const columns: Column<LearningRun>[] = [
     { header: "ID", cell: (r) => <span className="font-medium text-neutral-900">#{r.id}</span> },
     { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{r.status}</Badge> },
-    { header: "Auslöser", cell: (r) => fmt(r.trigger_type) },
+    { header: "Auslöser", info: "manual = von Hand gestartet. scheduled = automatisch nach Zeitplan.", cell: (r) => fmt(r.trigger_type) },
     { header: "Schritt", cell: (r) => fmt(r.current_step) },
     { header: "Ligen / Märkte", cell: (r) => `${fmt(r.leagues_processed)} / ${fmt(r.markets_processed)}` },
-    { header: "Eligible / Excluded", cell: (r) => `${fmt(r.eligible_matches)} / ${fmt(r.excluded_matches)}` },
+    {
+      header: "Eligible / Excluded",
+      info: "Eligible = Spiele, die fürs Lernen verwendet wurden. Excluded = Spiele, die ausgeschlossen wurden (z.B. fehlende Daten).",
+      cell: (r) => `${fmt(r.eligible_matches)} / ${fmt(r.excluded_matches)}`,
+    },
     { header: "Challenger erstellt", cell: (r) => fmt(r.challengers_created) },
     { header: "Gestartet", cell: (r) => fmt(r.started_at) },
     { header: "Beendet", cell: (r) => fmt(r.completed_at) },
@@ -66,7 +71,10 @@ export default function LearningRunsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Run History</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Run History
+          <InfoTooltip text="Verlauf aller bisherigen Lernvorgänge, in denen die Vorhersage-Modelle mit neuen Spieldaten trainiert wurden." />
+        </h1>
         <p className="text-sm text-neutral-400">Alle Learning-Läufe, neueste zuerst.</p>
       </div>
 

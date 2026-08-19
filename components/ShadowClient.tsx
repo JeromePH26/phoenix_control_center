@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { ShadowPrediction } from "@/lib/types";
@@ -84,15 +85,18 @@ export default function ShadowClient() {
     { header: "Liga", cell: (p) => p.league_id },
     { header: "Markt", cell: (p) => p.market },
     { header: "Settled", cell: (p) => <Badge tone={p.settled ? "green" : "neutral"}>{p.settled ? "Ja" : "Nein"}</Badge> },
-    { header: "Brier", cell: (p) => fmt(p.brier_score) },
-    { header: "Log Loss", cell: (p) => fmt(p.log_loss) },
+    { header: "Brier", info: "Brier Score: misst die Treffgenauigkeit der Wahrscheinlichkeiten. Niedriger = besser.", cell: (p) => fmt(p.brier_score) },
+    { header: "Log Loss", info: "Ähnlich wie Brier Score, bestraft selbstsichere Fehlvorhersagen stärker. Niedriger = besser.", cell: (p) => fmt(p.log_loss) },
     { header: "Kickoff", cell: (p) => fmt(p.kickoff) },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Shadow</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Shadow
+          <InfoTooltip text="Ein Testmodell rechnet im Hintergrund mit, ohne dass Nutzer davon etwas sehen — so kann man prüfen, ob es besser wäre als das aktuelle Modell, bevor man wirklich umstellt." />
+        </h1>
         <p className="text-sm text-neutral-400">
           Champion und Challenger erhalten denselben Pre-Match-Input; Shadow-Predictions dienen ausschließlich der
           Evaluation, nicht der Nutzer-Ausgabe.

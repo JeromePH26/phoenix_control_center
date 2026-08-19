@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { SupportTicket } from "@/lib/types";
 
@@ -87,9 +88,9 @@ export default function SupportTicketsClient() {
     { header: "ID", cell: (t) => <span className="font-medium text-neutral-900">#{t.id}</span> },
     { header: "Betreff", cell: (t) => t.subject },
     { header: "Kategorie", cell: (t) => fmt(t.category) },
-    { header: "Status", cell: (t) => <Badge tone={statusTone(t.status)}>{t.status}</Badge> },
-    { header: "Priorität", cell: (t) => <Badge tone={priorityTone(t.priority)}>{t.priority}</Badge> },
-    { header: "Zugewiesen", cell: (t) => fmt(t.assigned_employee_id) },
+    { header: "Status", info: "NEU = noch niemand hat sich gekümmert. WARTET_AUF_NUTZER = wir warten auf eine Antwort vom Nutzer. GELOEST/GESCHLOSSEN = erledigt.", cell: (t) => <Badge tone={statusTone(t.status)}>{t.status}</Badge> },
+    { header: "Priorität", info: "Wie dringend das Ticket bearbeitet werden sollte.", cell: (t) => <Badge tone={priorityTone(t.priority)}>{t.priority}</Badge> },
+    { header: "Zugewiesen", info: "Interne Nummer des Mitarbeiters, der sich um dieses Ticket kümmert.", cell: (t) => fmt(t.assigned_employee_id) },
     { header: "Erstellt", cell: (t) => fmt(t.created_at) },
     { header: "Aktualisiert", cell: (t) => fmt(t.updated_at) },
   ];
@@ -99,7 +100,10 @@ export default function SupportTicketsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          {title}
+          <InfoTooltip text="Support-Anfragen, die Nutzer aus der App geschickt haben. Klicke auf ein Ticket, um zu antworten." />
+        </h1>
         <p className="text-sm text-neutral-400">{description}</p>
       </div>
 

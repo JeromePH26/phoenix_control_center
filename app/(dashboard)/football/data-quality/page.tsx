@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import { safeJson } from "@/lib/backend";
@@ -27,8 +28,11 @@ export default async function DataQualityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Datenqualität</h1>
-        <p className="text-sm text-neutral-400">Abdeckungs- und Whitelist-Report des Football-Datenbestands.</p>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Datenqualität
+          <InfoTooltip text="Zeigt, wie vollständig und zuverlässig die gespeicherten Fußballdaten sind (z.B. wie viele Ligen freigegeben/gesperrt sind)." />
+        </h1>
+        <p className="text-sm text-neutral-400">Abdeckungs- und Whitelist-Report (Freigabeliste-Bericht) des Football-Datenbestands.</p>
       </div>
 
       {errorState === "unreachable" && (

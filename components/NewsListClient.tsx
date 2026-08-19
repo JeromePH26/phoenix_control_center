@@ -7,6 +7,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { EditorialArticle } from "@/lib/types";
 
@@ -76,9 +77,9 @@ export default function NewsListClient() {
       ),
     },
     { header: "Kategorie", cell: (a) => a.category },
-    { header: "Status", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
-    { header: "Homepage", cell: (a) => (a.homepage_feature ? <Badge tone="gold">Feature</Badge> : "–") },
-    { header: "Breaking", cell: (a) => (a.breaking ? <Badge tone="red">Breaking</Badge> : "–") },
+    { header: "Status", info: "DRAFT = Entwurf, noch nicht sichtbar. SCHEDULED = geplant für später. PUBLISHED = live in der App. HIDDEN/ARCHIVED = nicht mehr sichtbar.", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
+    { header: "Homepage", info: "Wird auf der Startseite der App besonders hervorgehoben.", cell: (a) => (a.homepage_feature ? <Badge tone="gold">Feature</Badge> : "–") },
+    { header: "Breaking", info: "Als Eilmeldung markiert — wird besonders auffällig angezeigt.", cell: (a) => (a.breaking ? <Badge tone="red">Breaking</Badge> : "–") },
     { header: "Erstellt", cell: (a) => fmt(a.created_at) },
     { header: "Veröffentlicht", cell: (a) => fmt(a.published_at) },
   ];
@@ -87,7 +88,10 @@ export default function NewsListClient() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">News</h1>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+            News
+            <InfoTooltip text="Eigene, selbst geschriebene PHÖNIX-Artikel — getrennt von den automatisch importierten News anderer Anbieter." />
+          </h1>
           <p className="text-sm text-neutral-400">Manuell verfasste PHÖNIX-Artikel (getrennt vom importierten News-Feed).</p>
         </div>
         <Link href="/content/news/new">

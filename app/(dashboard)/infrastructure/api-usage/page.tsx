@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -34,15 +35,18 @@ export default async function ApiUsagePage() {
   const columns: Column<ApiUsageRow>[] = [
     { header: "API", cell: (r) => <span className="font-medium text-neutral-900">{r.api_name}</span> },
     { header: "Datum", cell: (r) => fmt(r.usage_date) },
-    { header: "Requests", cell: (r) => fmt(r.requests) },
+    { header: "Requests", info: "Anzahl der Anfragen, die PHÖNIX an diese externe Datenquelle geschickt hat. Es gibt ein Tageslimit.", cell: (r) => fmt(r.requests) },
     { header: "Zuletzt aktualisiert", cell: (r) => fmt(r.updated_at) },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">API Usage</h1>
-        <p className="text-sm text-neutral-400">Tägliches Request-Budget je externer API (API-Sports).</p>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          API Usage
+          <InfoTooltip text="Zeigt, wie oft PHÖNIX heute schon bei der externen Fußball-Datenquelle 'angeklopft' hat. Es gibt ein Tageslimit — bei zu vielen Anfragen könnten Daten fehlen." />
+        </h1>
+        <p className="text-sm text-neutral-400">Tägliches Anfragen-Budget je externer Datenquelle (API-Sports).</p>
       </div>
 
       {errorState === "unreachable" && (

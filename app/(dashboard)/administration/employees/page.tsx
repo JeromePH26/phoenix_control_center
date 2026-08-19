@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewEmployeeModal from "@/components/NewEmployeeModal";
@@ -74,7 +75,7 @@ export default function EmployeesPage() {
     { header: "Name", cell: (e) => <span className="font-medium text-neutral-900">{e.name}</span> },
     { header: "Login", cell: (e) => e.login },
     { header: "E-Mail", cell: (e) => e.email },
-    { header: "Rolle", cell: (e) => <Badge tone="gold">{e.role}</Badge> },
+    { header: "Rolle", info: "Legt fest, welche Rechte der Mitarbeiter standardmäßig hat (siehe Seite 'Rechte').", cell: (e) => <Badge tone="gold">{e.role}</Badge> },
     { header: "Abteilung", cell: (e) => e.department || "–" },
     {
       header: "Status",
@@ -87,7 +88,7 @@ export default function EmployeesPage() {
           "–"
         ),
     },
-    { header: "Aktive Sessions", cell: (e) => e.activeSessionCount ?? "–" },
+    { header: "Aktive Sessions", info: "Anzahl der Geräte/Browser, auf denen dieser Mitarbeiter gerade eingeloggt ist.", cell: (e) => e.activeSessionCount ?? "–" },
     { header: "Letzter Login", cell: (e) => e.lastLoginAt ?? "–" },
     {
       header: "",
@@ -109,7 +110,10 @@ export default function EmployeesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Mitarbeiter</h1>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+            Mitarbeiter
+            <InfoTooltip text="Alle Konten, mit denen sich Menschen in dieses Control Center einloggen können." />
+          </h1>
           <p className="text-sm text-neutral-400">Verwaltung von Mitarbeiterkonten und Rollen.</p>
         </div>
         <Button onClick={() => setShowNewModal(true)}>Neuer Mitarbeiter</Button>

@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import type { FootballAsset } from "@/lib/types";
@@ -55,10 +56,10 @@ export default function FootballAssetsClient() {
   }, [load]);
 
   const columns: Column<FootballAsset>[] = [
-    { header: "Typ", cell: (a) => a.type },
+    { header: "Typ", info: "Ob es sich um ein Team- oder ein Liga-Wappen (Logo) handelt.", cell: (a) => a.type },
     { header: "Name", cell: (a) => a.entityName ?? a.id },
     { header: "ID", cell: (a) => a.id },
-    { header: "Status", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
+    { header: "Status", info: "OK = Wappen vorhanden. MISSING = fehlt. STALE = veraltet, sollte aktualisiert werden.", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
     { header: "Aktualisiert", cell: (a) => a.updatedAt ?? "–" },
     {
       header: "",
@@ -73,7 +74,10 @@ export default function FootballAssetsClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Wappen &amp; Assets</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Wappen &amp; Assets
+          <InfoTooltip text="Assets = Bild-Dateien wie Team- und Liga-Wappen (Logos), die in der App angezeigt werden. Hier siehst du, ob welche fehlen, und kannst sie ersetzen." />
+        </h1>
         <p className="text-sm text-neutral-400">Team- und Liga-Logos, Status und Ersetzen.</p>
       </div>
 

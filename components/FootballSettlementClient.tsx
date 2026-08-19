@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import type { SettlementJob } from "@/lib/types";
@@ -124,13 +125,14 @@ export default function FootballSettlementClient() {
 
   const columns: Column<SettlementJob>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
     {
       header: "Fortschritt",
+      info: "geprüft = angeschaut, abgerechnet = Endergebnis nachgetragen, offen = noch nicht dran, fehlgeschlagen = ging schief.",
       cell: (j) => `${j.checked ?? 0} geprüft · ${j.settled ?? 0} abgerechnet · ${j.pending ?? 0} offen · ${j.failed ?? 0} fehlgeschlagen`,
     },
-    { header: "Min. Std. seit Anstoß", cell: (j) => j.minHoursSinceKickoff ?? "–" },
-    { header: "Batch", cell: (j) => j.batchSize ?? "–" },
+    { header: "Min. Std. seit Anstoß", info: "Nur Spiele, die schon mindestens so viele Stunden nach Anpfiff sind, wurden in diesem Lauf berücksichtigt.", cell: (j) => j.minHoursSinceKickoff ?? "–" },
+    { header: "Batch", info: "Wie viele Spiele pro Durchlauf höchstens bearbeitet wurden.", cell: (j) => j.batchSize ?? "–" },
     { header: "Gestartet", cell: (j) => j.createdAt ?? "–" },
     { header: "Beendet", cell: (j) => j.completedAt ?? "–" },
     {
@@ -142,13 +144,23 @@ export default function FootballSettlementClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Settlement</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Settlement
+          <InfoTooltip text="Settlement = Endergebnisse von Spielen nachträglich eintragen, damit Tipps als richtig/falsch abgerechnet werden können." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Ergänzt Ergebnis/Status bereits eingefrorener Pre-Match-Snapshots. Keine erneute Analyse historischer Matches.
+          Ergänzt Ergebnis/Status bereits eingefrorener Pre-Match-Snapshots (der zuvor gespeicherte Stand vor Anpfiff). Keine erneute Analyse historischer Matches.
         </p>
       </div>
 
-      <Card title="Ergebnisabdeckung">
+      <Card
+        title={
+          <span className="inline-flex items-center gap-1">
+            Ergebnisabdeckung
+            <InfoTooltip text="Zeigt, für wie viele beendete Spiele bereits ein Endergebnis vorliegt." />
+          </span>
+        }
+      >
         {coverageState === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
         {coverageState === "unreachable" && (
           <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />

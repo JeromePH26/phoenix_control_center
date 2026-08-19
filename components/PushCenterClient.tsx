@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { PushBroadcast } from "@/lib/types";
@@ -92,16 +93,19 @@ export default function PushCenterClient() {
 
   const columns: Column<PushBroadcast>[] = [
     { header: "Titel", cell: (b) => b.title },
-    { header: "Ziel", cell: (b) => (b.target_type === "league" ? `Liga: ${b.target_value}` : "Alle") },
-    { header: "Gesendet", cell: (b) => <Badge tone="green">{b.sent_count}</Badge> },
-    { header: "Fehlgeschlagen", cell: (b) => (b.failed_count > 0 ? <Badge tone="red">{b.failed_count}</Badge> : "–") },
+    { header: "Ziel", info: "Wer die Push-Nachricht auf sein Gerät bekommen hat.", cell: (b) => (b.target_type === "league" ? `Liga: ${b.target_value}` : "Alle") },
+    { header: "Gesendet", info: "Anzahl der Geräte, die die Nachricht erfolgreich erhalten haben.", cell: (b) => <Badge tone="green">{b.sent_count}</Badge> },
+    { header: "Fehlgeschlagen", info: "Anzahl der Geräte, bei denen die Zustellung nicht funktioniert hat (z.B. App deinstalliert).", cell: (b) => (b.failed_count > 0 ? <Badge tone="red">{b.failed_count}</Badge> : "–") },
     { header: "Zeitpunkt", cell: (b) => fmt(b.created_at) },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Push</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Push
+          <InfoTooltip text="Push-Benachrichtigung: eine kurze Meldung, die direkt auf dem Handy-Bildschirm der Nutzer erscheint, auch wenn die App gerade nicht offen ist." />
+        </h1>
         <p className="text-sm text-neutral-400">
           Ein versendeter Push kann nicht zurückgenommen werden. Premium/Free/Beta-Zielgruppen sind ohne Nutzerkonten
           nicht möglich — verfügbar: alle Geräte oder Fans einer Liga.

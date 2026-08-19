@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -40,10 +41,11 @@ export default async function AdStatsPage() {
     { header: "Kampagne", cell: (c) => c.name },
     { header: "Slot", cell: (c) => SLOT_LABELS[c.slot] ?? c.slot },
     { header: "Status", cell: (c) => <Badge tone={c.active ? "green" : "neutral"}>{c.active ? "Aktiv" : "Pausiert"}</Badge> },
-    { header: "Impressions", cell: (c) => c.impressions },
-    { header: "Klicks", cell: (c) => c.clicks },
+    { header: "Impressions", info: "Wie oft die Werbung angezeigt wurde.", cell: (c) => c.impressions },
+    { header: "Klicks", info: "Wie oft jemand auf die Werbung geklickt hat.", cell: (c) => c.clicks },
     {
       header: "CTR",
+      info: "Click-Through-Rate: Anteil der Anzeigen, die zu einem Klick geführt haben (Klicks ÷ Impressions). Höher = die Werbung funktioniert besser.",
       cell: (c) => (c.impressions > 0 ? `${((c.clicks / c.impressions) * 100).toFixed(2)}%` : "–"),
     },
   ];
@@ -77,7 +79,10 @@ export default async function AdStatsPage() {
               <p className="mt-0.5 text-xl font-semibold text-neutral-900">{totalClicks}</p>
             </div>
             <div className="rounded-md border border-neutral-100 bg-white px-4 py-3 shadow-sm">
-              <p className="text-xs text-neutral-500">Ø CTR</p>
+              <p className="flex items-center gap-1 text-xs text-neutral-500">
+                Ø CTR
+                <InfoTooltip text="Click-Through-Rate: Anteil der Anzeigen, die zu einem Klick geführt haben. Höher = die Werbung funktioniert besser." />
+              </p>
               <p className="mt-0.5 text-xl font-semibold text-neutral-900">
                 {totalImpressions > 0 ? `${((totalClicks / totalImpressions) * 100).toFixed(2)}%` : "–"}
               </p>

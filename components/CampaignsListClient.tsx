@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AdCampaign } from "@/lib/types";
 
@@ -60,21 +61,24 @@ export default function CampaignsListClient({ slotFilter }: { slotFilter?: strin
         </Link>
       ),
     },
-    { header: "Slot", cell: (c) => SLOT_LABELS[c.slot] ?? c.slot },
+    { header: "Slot", info: "An welcher Stelle in der App die Werbung angezeigt wird.", cell: (c) => SLOT_LABELS[c.slot] ?? c.slot },
     { header: "Aktiv", cell: (c) => <Badge tone={c.active ? "green" : "neutral"}>{c.active ? "Ja" : "Nein"}</Badge> },
-    { header: "Zielgruppe", cell: (c) => c.target_audience },
+    { header: "Zielgruppe", info: "Welche Nutzer die Werbung sehen: ALL = alle, FREE = nur ohne Premium, PREMIUM = nur mit Premium.", cell: (c) => c.target_audience },
     { header: "Zeitraum", cell: (c) => `${fmt(c.start_date)} – ${fmt(c.end_date)}` },
-    { header: "Impressions", cell: (c) => c.impressions },
-    { header: "Klicks", cell: (c) => c.clicks },
+    { header: "Impressions", info: "Wie oft die Werbung angezeigt wurde.", cell: (c) => c.impressions },
+    { header: "Klicks", info: "Wie oft jemand auf die Werbung geklickt hat.", cell: (c) => c.clicks },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Kampagnen</h1>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+            Kampagnen
+            <InfoTooltip text="Werbeanzeigen, die in der App an bestimmten Stellen (Slots) eingeblendet werden." />
+          </h1>
           <p className="text-sm text-neutral-400">
-            Werbe-Slots sind serverseitig fest vordefiniert. Noch nicht in der App verbunden.
+            Werbe-Slots (Anzeigeplätze) sind serverseitig fest vordefiniert. Noch nicht in der App verbunden.
           </p>
         </div>
         <Link href="/advertising/campaigns/new">

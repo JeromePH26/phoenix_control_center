@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
@@ -81,14 +82,26 @@ export default function ModelDetailClient({ id }: { id: string }) {
   }
 
   const evaluationColumns: Column<ModelEvaluation>[] = [
-    { header: "Typ", cell: (e) => <Badge tone="neutral">{e.evaluation_type}</Badge> },
-    { header: "Scope", cell: (e) => fmt(e.match_scope) },
+    {
+      header: "Typ",
+      info: "Wie das Modell getestet wurde: walk_forward/holdout = an vergangenen, echten Spielen; shadow = im Live-Vergleich zum aktuellen Champion; monthly_review = beim monatlichen Check.",
+      cell: (e) => <Badge tone="neutral">{e.evaluation_type}</Badge>,
+    },
+    { header: "Scope", info: "Welche Spiele einbezogen wurden (z.B. alle oder nur 'saubere' Fälle ohne Störfaktoren).", cell: (e) => fmt(e.match_scope) },
     { header: "Liga", cell: (e) => fmt(e.league_id ?? "GLOBAL") },
-    { header: "Sample", cell: (e) => fmt(e.sample_size) },
-    { header: "Brier", cell: (e) => fmt(e.brier_score) },
-    { header: "Log Loss", cell: (e) => fmt(e.log_loss) },
-    { header: "Accuracy", cell: (e) => fmt(e.accuracy) },
-    { header: "ROI", cell: (e) => fmt(e.roi) },
+    { header: "Sample", info: "Anzahl Spiele, auf denen dieses Testergebnis beruht.", cell: (e) => fmt(e.sample_size) },
+    {
+      header: "Brier",
+      info: "Brier Score: misst, wie gut die vorhergesagten Wahrscheinlichkeiten zum tatsächlichen Ausgang gepasst haben. Niedriger = besser, 0 wäre perfekt.",
+      cell: (e) => fmt(e.brier_score),
+    },
+    {
+      header: "Log Loss",
+      info: "Ähnlich wie Brier Score, bestraft aber sehr selbstsichere Fehlvorhersagen stärker. Niedriger = besser.",
+      cell: (e) => fmt(e.log_loss),
+    },
+    { header: "Accuracy", info: "Anteil der Spiele, bei denen die wahrscheinlichste Vorhersage tatsächlich eingetroffen ist. Höher = besser.", cell: (e) => fmt(e.accuracy) },
+    { header: "ROI", info: "Return on Investment: fiktiver Gewinn/Verlust in Prozent, wenn man nach diesem Modell gewettet hätte.", cell: (e) => fmt(e.roi) },
     { header: "Erstellt", cell: (e) => fmt(e.created_at) },
   ];
 
@@ -97,7 +110,10 @@ export default function ModelDetailClient({ id }: { id: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Modell-Details</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Modell-Details
+          <InfoTooltip text="Details zu einer einzelnen Version eines Vorhersage-Modells: wie gut es abschneidet und was es beeinflusst." />
+        </h1>
       </div>
 
       {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}

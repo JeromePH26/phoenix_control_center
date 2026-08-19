@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -55,9 +56,12 @@ export default async function OnlineStatusPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Online Status</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Online Status
+          <InfoTooltip text="Zeigt, welche Mitarbeiter gerade eingeloggt sind." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          Kein echtes Presence/Heartbeat-System — &quot;Online&quot; bedeutet: mindestens eine aktive, nicht abgelaufene Session.
+          Kein echtes Live-Anwesenheitssystem — &quot;Online&quot; bedeutet hier: mindestens eine aktive, noch gültige Sitzung.
         </p>
       </div>
 

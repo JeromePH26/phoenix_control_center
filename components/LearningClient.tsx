@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -106,7 +107,10 @@ export default function LearningClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Learning</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Learning
+          <InfoTooltip text="Der Bereich, in dem PHÖNIX aus vergangenen Spielen automatisch lernt und seine Vorhersage-Modelle verbessert. Rein statistisch, keine künstliche Intelligenz wie ChatGPT o.ä." />
+        </h1>
         <p className="text-sm text-neutral-400">Statistisches Modell-Learning — keine generative KI (Section 56/97).</p>
       </div>
 
@@ -141,11 +145,25 @@ export default function LearningClient() {
                 "Nächster Learning-Run (Berlin)": overview.nextLearningRunBerlin,
                 "Nächstes Champion-Review (Berlin)": overview.nextChampionReviewBerlin,
               }}
+              info={{
+                "Aktive Champions": "Anzahl der Liga×Markt-Kombinationen mit einem aktuell aktiven Champion-Modell.",
+                "Aktive Challenger": "Anzahl der Herausforderer-Modelle, die gerade getestet werden.",
+                "Shadow Predictions": "Vorhersagen, die im Hintergrund zum Vergleich mitlaufen, aber nie als echter Tipp gezeigt werden.",
+                "Lernfähige Matches": "Anzahl der Spiele, die aktuell die Kriterien erfüllen, um fürs Lernen verwendet zu werden.",
+              }}
             />
           </Card>
 
           {audit && (
-            <Card title="Eligibility-Audit (Dry-Run)" action={<span className="text-xs text-neutral-400">Rein lesend</span>}>
+            <Card
+              title={
+                <span className="inline-flex items-center gap-1">
+                  Eligibility-Audit (Dry-Run)
+                  <InfoTooltip text="Prüft, wie viele gespeicherte Spiele aktuell die Bedingungen fürs Lernen erfüllen würden — ohne dabei wirklich etwas zu verändern." />
+                </span>
+              }
+              action={<span className="text-xs text-neutral-400">Rein lesend</span>}
+            >
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
                   <p className="text-xs text-neutral-500">Gespeicherte Snapshots</p>
@@ -156,7 +174,10 @@ export default function LearningClient() {
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{audit.eligible}</p>
                 </div>
                 <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
-                  <p className="text-xs text-neutral-500">Not Eligible</p>
+                  <p className="flex items-center gap-1 text-xs text-neutral-500">
+                    Not Eligible
+                    <InfoTooltip text="Spiele, die (noch) nicht fürs Lernen verwendet werden können, z.B. weil das Ergebnis fehlt oder die Liga nicht freigeschaltet ist." />
+                  </p>
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{audit.notEligible}</p>
                 </div>
               </div>

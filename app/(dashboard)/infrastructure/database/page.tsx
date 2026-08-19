@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -26,14 +27,21 @@ export default async function DatabasePage() {
   }
 
   const tableColumns: Column<{ table: string; rows: number }>[] = [
-    { header: "Tabelle", cell: (t) => <code className="text-xs">{t.table}</code> },
-    { header: "Zeilen (geschätzt)", cell: (t) => t.rows },
+    {
+      header: "Tabelle",
+      info: "Interner, technischer Name des Datenspeicherbereichs (keine Übersetzung — nur für Entwickler relevant).",
+      cell: (t) => <code className="text-xs">{t.table}</code>,
+    },
+    { header: "Zeilen (geschätzt)", info: "Ungefähre Anzahl gespeicherter Datensätze in dieser Tabelle.", cell: (t) => t.rows },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Database</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Database
+          <InfoTooltip text="Direkter Blick in die Datenbank (den zentralen Datenspeicher im Hintergrund) von PHÖNIX — rein informativ." />
+        </h1>
         <p className="text-sm text-neutral-400">Direkte Postgres-Introspektion — keine externe Anbindung nötig.</p>
       </div>
 

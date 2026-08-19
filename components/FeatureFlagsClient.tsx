@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
 import type { FeatureFlag } from "@/lib/types";
@@ -118,6 +119,7 @@ export default function FeatureFlagsClient() {
     },
     {
       header: "Rollout %",
+      info: "Wie viel Prozent der Nutzer dieses Feature sehen sollen. 0 = niemand, 100 = alle. So kann man ein neues Feature schrittweise ausrollen.",
       cell: (f) => (
         <input
           type="number"
@@ -134,6 +136,7 @@ export default function FeatureFlagsClient() {
     },
     {
       header: "Zielgruppe",
+      info: "Wer dieses Feature sehen kann: ALL = alle Nutzer, FREE/PREMIUM = nur diese Kontoart, BETA = nur Testnutzer, CUSTOM_SEGMENT = eine speziell definierte Gruppe.",
       cell: (f) => (
         <select
           className={selectClass}
@@ -150,6 +153,7 @@ export default function FeatureFlagsClient() {
     },
     {
       header: "Stage",
+      info: "STAGING = nur zum internen Testen sichtbar, noch nicht live. PRODUCTION = für echte Nutzer live.",
       cell: (f) => (
         <select
           className={selectClass}
@@ -171,7 +175,10 @@ export default function FeatureFlagsClient() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Feature Flags</h1>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+            Feature Flags
+            <InfoTooltip text="Feature Flag = Schalter für eine einzelne App-Funktion, mit dem man sie nur für bestimmte Nutzergruppen oder schrittweise einschalten kann." />
+          </h1>
           <p className="text-sm text-neutral-400">
             Feature Flags, Rollout-Prozentsatz und Staging in einem Modell — ein Flag mit stage=STAGING ist sein
             eigener Entwurf.

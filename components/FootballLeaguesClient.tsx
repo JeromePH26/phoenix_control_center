@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -88,6 +89,7 @@ export default function FootballLeaguesClient() {
     { header: "Liga-ID", cell: (l) => l.leagueId },
     {
       header: "Status",
+      info: "Auto = System entscheidet automatisch. Whitelist = manuell freigegeben, wird sicher angezeigt. Blacklist = manuell gesperrt, wird nie angezeigt.",
       cell: (l) => {
         const status = typeof l.manualStatus === "string" ? l.manualStatus : undefined;
         return (
@@ -129,7 +131,10 @@ export default function FootballLeaguesClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Ligen / Whitelist</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Ligen / Whitelist
+          <InfoTooltip text="Whitelist = Liste erlaubter/freigegebener Ligen. Hier legst du fest, welche Ligen in der App sicher angezeigt werden dürfen." />
+        </h1>
         <p className="text-sm text-neutral-400">Manueller Freigabe- und Sperrstatus je Liga.</p>
       </div>
 

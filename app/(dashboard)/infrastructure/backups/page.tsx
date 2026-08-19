@@ -1,12 +1,16 @@
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 
 export default function BackupsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Backups</h1>
-        <p className="text-sm text-neutral-400">Letztes Backup, Alter, Größe, Restore-Test.</p>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Backups
+          <InfoTooltip text="Backup = automatisch gespeicherte Sicherheitskopie aller Daten, damit im Notfall nichts verloren geht." />
+        </h1>
+        <p className="text-sm text-neutral-400">Letztes Backup, Alter, Größe, Wiederherstellungs-Test.</p>
       </div>
 
       <Card title="Status" action={<Badge tone="red">NOT CONFIGURED</Badge>}>

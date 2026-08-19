@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AuditLogEntry } from "@/lib/types";
@@ -64,14 +65,15 @@ export default function AuditLogClient() {
   const columns: Column<AuditLogEntry>[] = [
     { header: "Zeit", cell: (e) => <span className="whitespace-nowrap text-neutral-500">{e.createdAt}</span> },
     { header: "Mitarbeiter", cell: (e) => e.employeeLogin },
-    { header: "Bereich", cell: (e) => <Badge tone="gold">{e.area}</Badge> },
-    { header: "Objekt", cell: (e) => `${e.objectType} #${e.objectId}` },
+    { header: "Bereich", info: "In welchem Teil des Systems die Änderung passiert ist (z.B. Mitarbeiter, Werbung).", cell: (e) => <Badge tone="gold">{e.area}</Badge> },
+    { header: "Objekt", info: "Der genaue Datensatz, der geändert wurde, mit seiner internen Nummer.", cell: (e) => `${e.objectType} #${e.objectId}` },
     { header: "Aktion", cell: (e) => e.action },
-    { header: "Vorher", cell: (e) => <JsonViewer value={e.previousValue} label="Vorher" /> },
-    { header: "Nachher", cell: (e) => <JsonViewer value={e.newValue} label="Nachher" /> },
+    { header: "Vorher", info: "Der Zustand der Daten, bevor die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.previousValue} label="Vorher" /> },
+    { header: "Nachher", info: "Der Zustand der Daten, nachdem die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.newValue} label="Nachher" /> },
     { header: "Grund / Kommentar", cell: (e) => e.reason || e.comment || "–" },
     {
       header: "Rückgängig?",
+      info: "Zeigt an, ob diese Änderung später wieder zurückgenommen wurde.",
       cell: (e) => (e.reverted ? <Badge tone="red">Reverted</Badge> : <Badge tone="neutral">Nein</Badge>),
     },
   ];
@@ -82,7 +84,10 @@ export default function AuditLogClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Audit Log</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Audit Log
+          <InfoTooltip text="Ein lückenloses Protokoll: wer hat wann was in PHÖNIX geändert. Zum Nachvollziehen von Änderungen." />
+        </h1>
         <p className="text-sm text-neutral-400">Nachvollziehbare Änderungshistorie über alle Bereiche.</p>
       </div>
 

@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
 import type { Incident } from "@/lib/types";
@@ -134,8 +135,8 @@ export default function IncidentsClient() {
         </button>
       ),
     },
-    { header: "Schwere", cell: (i) => <Badge tone={severityTone(i.severity)}>{i.severity}</Badge> },
-    { header: "Status", cell: (i) => <Badge tone={statusTone(i.status)}>{i.status}</Badge> },
+    { header: "Schwere", info: "Wie stark die Störung Nutzer betroffen hat: minor (klein) → major (groß) → critical (schwerwiegend).", cell: (i) => <Badge tone={severityTone(i.severity)}>{i.severity}</Badge> },
+    { header: "Status", info: "OPEN = Störung läuft noch. MONITORING = behoben, wird beobachtet. RESOLVED = abgeschlossen.", cell: (i) => <Badge tone={statusTone(i.status)}>{i.status}</Badge> },
     { header: "Betroffene Systeme", cell: (i) => fmt(i.affected_systems) },
     { header: "Beginn", cell: (i) => fmt(i.started_at) },
     { header: "Ende", cell: (i) => fmt(i.ended_at) },
@@ -145,8 +146,13 @@ export default function IncidentsClient() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Incidents</h1>
-          <p className="text-sm text-neutral-400">Größere Störungen: Beginn, Ende, Maßnahmen, Postmortem.</p>
+          <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+            Incidents
+            <InfoTooltip text="Größere Störungen im System werden hier dokumentiert: was war kaputt, wie lange, was wurde dagegen getan." />
+          </h1>
+          <p className="text-sm text-neutral-400">
+            Größere Störungen: Beginn, Ende, Maßnahmen, Postmortem (kurzer Rückblick: was ist passiert und was lernen wir daraus).
+          </p>
         </div>
         <Button onClick={() => setCreating(true)}>Neuer Incident</Button>
       </div>
@@ -234,11 +240,11 @@ export default function IncidentsClient() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Maßnahmen</label>
+              <label className={labelClass}>Maßnahmen (was wurde unternommen, um das Problem zu lösen)</label>
               <textarea rows={3} className={inputClass} value={editing.actions_taken ?? ""} onChange={(e) => setEditing({ ...editing, actions_taken: e.target.value })} />
             </div>
             <div>
-              <label className={labelClass}>Postmortem</label>
+              <label className={labelClass}>Postmortem (Rückblick: Ursache und Lehren für die Zukunft)</label>
               <textarea rows={3} className={inputClass} value={editing.postmortem ?? ""} onChange={(e) => setEditing({ ...editing, postmortem: e.target.value })} />
             </div>
             {error && (

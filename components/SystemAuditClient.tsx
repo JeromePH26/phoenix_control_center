@@ -4,6 +4,7 @@ import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { SystemAuditReport } from "@/lib/types";
 
@@ -49,10 +50,13 @@ export default function SystemAuditClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">System Audit</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          System Audit
+          <InfoTooltip text="Ein Knopfdruck-Gesundheitscheck des ganzen Systems: prüft auf Probleme und zeigt sie als Liste an." />
+        </h1>
         <p className="text-sm text-neutral-400">
-          On-Demand-Bericht aus echten Kennzahlen (kein monatlich geplanter Job mit AUDIT-XXX-Fehlercodes — das ist
-          Folgearbeit).
+          On-Demand-Bericht (wird auf Knopfdruck neu erstellt) aus echten Kennzahlen — kein automatisch geplanter,
+          monatlicher Job.
         </p>
       </div>
 
@@ -75,8 +79,8 @@ export default function SystemAuditClient() {
             title="Ergebnis"
             action={
               <div className="flex gap-1.5">
-                <Badge tone={report.criticalCount > 0 ? "red" : "green"}>{report.criticalCount} Critical</Badge>
-                <Badge tone={report.warningCount > 0 ? "gold" : "green"}>{report.warningCount} Warnings</Badge>
+                <Badge tone={report.criticalCount > 0 ? "red" : "green"}>{report.criticalCount} Critical (schwerwiegend)</Badge>
+                <Badge tone={report.warningCount > 0 ? "gold" : "green"}>{report.warningCount} Warnings (Hinweise)</Badge>
               </div>
             }
           >

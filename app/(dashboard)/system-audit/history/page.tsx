@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
@@ -35,15 +36,18 @@ export default async function SystemAuditHistoryPage() {
 
   const columns: Column<SystemAuditRun>[] = [
     { header: "Zeitpunkt", cell: (r) => fmt(r.generated_at) },
-    { header: "Critical", cell: (r) => <Badge tone={r.critical_count > 0 ? "red" : "green"}>{r.critical_count}</Badge> },
-    { header: "Warnings", cell: (r) => <Badge tone={r.warning_count > 0 ? "gold" : "green"}>{r.warning_count}</Badge> },
+    { header: "Critical", info: "Anzahl schwerwiegender Probleme, die bei diesem Audit gefunden wurden.", cell: (r) => <Badge tone={r.critical_count > 0 ? "red" : "green"}>{r.critical_count}</Badge> },
+    { header: "Warnings", info: "Anzahl kleinerer Hinweise, die bei diesem Audit gefunden wurden.", cell: (r) => <Badge tone={r.warning_count > 0 ? "gold" : "green"}>{r.warning_count}</Badge> },
     { header: "Bericht", cell: (r) => <JsonViewer value={r.report_text} label="Bericht" /> },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">System Audit — Historie</h1>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          System Audit — Historie
+          <InfoTooltip text="Historie = Verlauf früherer Gesundheitschecks des Systems, zum Vergleich über die Zeit." />
+        </h1>
         <p className="text-sm text-neutral-400">Jeder unter &quot;Monatsbericht&quot; ausgeführte Audit wird hier gespeichert.</p>
       </div>
 

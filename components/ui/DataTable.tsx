@@ -1,7 +1,10 @@
 import { ReactNode } from "react";
+import InfoTooltip from "./InfoTooltip";
 
 export interface Column<T> {
   header: string;
+  /** Plain-language explanation shown via a hoverable "i" icon next to the header, for jargon/abbreviations. */
+  info?: string;
   cell: (row: T) => ReactNode;
   className?: string;
 }
@@ -26,7 +29,10 @@ export default function DataTable<T>({
           <tr className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500">
             {columns.map((col) => (
               <th key={col.header} className={`py-2 pr-4 font-medium ${col.className ?? ""}`}>
-                {col.header}
+                <span className="inline-flex items-center gap-1">
+                  {col.header}
+                  {col.info && <InfoTooltip text={col.info} />}
+                </span>
               </th>
             ))}
           </tr>

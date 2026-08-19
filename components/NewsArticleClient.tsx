@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import type { EditorialArticle } from "@/lib/types";
 
@@ -141,7 +142,10 @@ export default function NewsArticleClient({ id }: { id: string }) {
         <Link href="/content/news" className="text-xs text-neutral-400 hover:text-neutral-600">
           ← Zurück zu News
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{isNew ? "Neuer Artikel" : "Artikel bearbeiten"}</h1>
+        <h1 className="mt-1 flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          {isNew ? "Neuer Artikel" : "Artikel bearbeiten"}
+          <InfoTooltip text="Entwurf schreiben, dann oben mit 'Veröffentlichen' live in der App schalten." />
+        </h1>
       </div>
 
       {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
@@ -182,7 +186,10 @@ export default function NewsArticleClient({ id }: { id: string }) {
                 <input className={inputClass} value={article.title ?? ""} onChange={(e) => field("title", e.target.value)} />
               </div>
               <div>
-                <label className={labelClass}>Zusammenfassung</label>
+                <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                  Zusammenfassung
+                  <InfoTooltip text="Kurzer Anrisstext, der z.B. in der Artikel-Liste angezeigt wird, bevor jemand den vollen Artikel öffnet." />
+                </label>
                 <textarea
                   rows={2}
                   className={inputClass}
@@ -210,7 +217,10 @@ export default function NewsArticleClient({ id }: { id: string }) {
                 </div>
               </div>
               <div>
-                <label className={labelClass}>Veröffentlichung planen (optional)</label>
+                <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                  Veröffentlichung planen (optional)
+                  <InfoTooltip text="Der Artikel wird automatisch zu diesem Zeitpunkt veröffentlicht, ohne dass jemand manuell eingreifen muss." />
+                </label>
                 <input
                   type="datetime-local"
                   className={inputClass}

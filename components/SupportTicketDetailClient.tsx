@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AssignableEmployee, SupportTicket, SupportTicketMessage } from "@/lib/types";
@@ -128,7 +129,10 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
         <Link href="/support/tickets" className="text-xs text-neutral-400 hover:text-neutral-600">
           ← Zurück zu Tickets
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">Ticket #{id}</h1>
+        <h1 className="mt-1 flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Ticket #{id}
+          <InfoTooltip text="Details zur Support-Anfrage. Unten kannst du Status/Priorität ändern und dem Nutzer antworten." />
+        </h1>
       </div>
 
       {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
@@ -155,6 +159,11 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
                 Screen: ticket.screen,
                 Erstellt: ticket.created_at,
                 Aktualisiert: ticket.updated_at,
+              }}
+              info={{
+                "Gerät (Installation-ID)": "Eindeutige, anonyme Kennung des Geräts, von dem aus das Ticket geschickt wurde (kein Nutzerkonto nötig).",
+                "PHÖNIX Match ID": "Falls der Nutzer sich auf ein bestimmtes Spiel bezogen hat, dessen interne Nummer.",
+                Screen: "Der Bildschirm/die Seite in der App, auf der sich der Nutzer befand, als er das Ticket geschickt hat.",
               }}
             />
           </Card>

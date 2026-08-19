@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
@@ -65,7 +66,14 @@ export default async function SystemHealthPage() {
             <StatTile label="DB-Größe" value={`${dbSizeMb} MB`} />
           </div>
 
-          <Card title="API Usage">
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                API Usage
+                <InfoTooltip text="Wie viele Anfragen heute schon an die externe Fußball-Datenquelle gestellt wurden. Es gibt ein Tageslimit — bei zu vielen Anfragen könnten Daten fehlen." />
+              </span>
+            }
+          >
             <KeyValueList
               data={Object.fromEntries(
                 health.apiUsage.map((row) => [`${row.api_name}`, `${row.requests} Requests heute`])
@@ -73,7 +81,14 @@ export default async function SystemHealthPage() {
             />
           </Card>
 
-          <Card title="Pending Jobs">
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Pending Jobs
+                <InfoTooltip text="Hintergrund-Aufgaben, die gerade laufen oder noch nicht fertig sind (z.B. Ergebnis-Abrechnung)." />
+              </span>
+            }
+          >
             <KeyValueList
               data={{
                 "Football Daily Pipeline": health.pendingJobs.footballDailyPipeline,
@@ -82,7 +97,15 @@ export default async function SystemHealthPage() {
             />
           </Card>
 
-          <Card title="Größte Tabellen" action={<Badge tone="neutral">Top 15</Badge>}>
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Größte Tabellen
+                <InfoTooltip text="Interne Datenbank-Tabellennamen (technisch, keine sprechenden Namen) — zeigt, wo die meisten Datensätze gespeichert sind." />
+              </span>
+            }
+            action={<Badge tone="neutral">Top 15</Badge>}
+          >
             <KeyValueList
               data={Object.fromEntries(health.database.largestTables.map((t) => [t.table, `${t.rows} Zeilen`]))}
             />
