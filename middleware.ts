@@ -31,5 +31,7 @@ export const config = {
     "/advertising/:path*",
     "/communication/:path*",
     "/premium/:path*",
+    "/operations/:path*",
+    "/system-audit/:path*",
   ],
 };

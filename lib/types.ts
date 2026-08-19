@@ -489,3 +489,91 @@ export interface PremiumFeature {
   updated_at?: string | null;
   updated_by?: string | null;
 }
+
+// --- Phase 6: Feature Flags, Release, Incidents, Security, System Health ---
+
+export type FlagAudience = "ALL" | "FREE" | "PREMIUM" | "BETA" | "CUSTOM_SEGMENT";
+export type FlagStage = "STAGING" | "PRODUCTION";
+
+export interface FeatureFlag {
+  flag_key: string;
+  label: string;
+  description?: string | null;
+  enabled: boolean;
+  rollout_percentage: number;
+  audience: FlagAudience | string;
+  stage: FlagStage | string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
+export interface ReleaseConfig {
+  current_version?: string | null;
+  minimum_supported_version?: string | null;
+  forced_update: boolean;
+  changelog?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
+export type IncidentSeverity = "minor" | "major" | "critical";
+export type IncidentStatus = "OPEN" | "MONITORING" | "RESOLVED";
+
+export interface Incident {
+  id: number;
+  title: string;
+  severity: IncidentSeverity | string;
+  status: IncidentStatus | string;
+  affected_systems?: string | null;
+  responsible_employee_id?: number | null;
+  actions_taken?: string | null;
+  postmortem?: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+export interface AdminSession {
+  token: string;
+  employee_id: number;
+  employee_name: string;
+  employee_login: string;
+  created_at?: string | null;
+  expires_at?: string | null;
+  ip?: string | null;
+  user_agent?: string | null;
+}
+
+export interface FailedLoginAttempt {
+  login: string;
+  ip?: string | null;
+  attempted_at?: string | null;
+}
+
+export interface SystemHealth {
+  apiUsage: Record<string, unknown>[];
+  pendingJobs: { footballDailyPipeline: number; footballMatchSettlement: number };
+  appStatus: Record<string, unknown>;
+  database: { sizeBytes: number; largestTables: { table: string; rows: number }[] };
+  openTicketCount: number;
+  openIncidentCount: number;
+}
+
+export interface SystemAuditReport {
+  generatedAt: string;
+  criticalCount: number;
+  warningCount: number;
+  critical: string[];
+  warnings: string[];
+  sections: Record<string, string[]>;
+  reportText: string;
+}
+
+export interface PermissionsCatalog {
+  allPermissions: string[];
+  roleDefaults: Record<string, string[]>;
+  roles: string[];
+}

@@ -17,7 +17,7 @@ export interface NavGroup {
 // shows placeholder data.
 export const NAV_TREE: NavGroup[] = [
   { label: "Overview", href: "/overview", enabled: true },
-  { label: "Operations", enabled: false },
+  { label: "Operations", href: "/operations", enabled: true },
   {
     label: "Football",
     enabled: false,
@@ -119,11 +119,11 @@ export const NAV_TREE: NavGroup[] = [
     children: [
       { label: "App Status", href: "/app-control/status", enabled: true },
       { label: "Module", enabled: false },
-      { label: "Feature Flags", enabled: false },
-      { label: "Wartungsmodus", enabled: false },
-      { label: "Rollouts", enabled: false },
-      { label: "Staging", enabled: false },
-      { label: "Mindestversion", enabled: false },
+      { label: "Feature Flags", href: "/app-control/feature-flags", enabled: true },
+      { label: "Wartungsmodus", href: "/app-control/status", enabled: true },
+      { label: "Rollouts", href: "/app-control/feature-flags", enabled: true },
+      { label: "Staging", href: "/app-control/feature-flags", enabled: true },
+      { label: "Mindestversion", href: "/app-control/release", enabled: true },
     ],
   },
   {
@@ -132,11 +132,12 @@ export const NAV_TREE: NavGroup[] = [
     children: [
       { label: "API Usage", href: "/infrastructure/api-usage", enabled: true },
       { label: "Jobs", href: "/infrastructure/jobs", enabled: true },
-      { label: "Railway", enabled: false },
-      { label: "Database", enabled: false },
+      { label: "Incidents", href: "/infrastructure/incidents", enabled: true },
+      { label: "Railway", href: "/infrastructure/railway", enabled: true },
+      { label: "Database", href: "/infrastructure/database", enabled: true },
       { label: "Storage", enabled: false },
-      { label: "Backups", enabled: false },
-      { label: "System Health", enabled: false },
+      { label: "Backups", href: "/infrastructure/backups", enabled: true },
+      { label: "System Health", href: "/infrastructure/system-health", enabled: true },
     ],
   },
   {
@@ -144,9 +145,9 @@ export const NAV_TREE: NavGroup[] = [
     enabled: false,
     children: [
       { label: "Mitarbeiter", href: "/administration/employees", enabled: true },
-      { label: "Rechte", enabled: false },
-      { label: "Online Status", enabled: false },
-      { label: "Security", enabled: false },
+      { label: "Rechte", href: "/administration/permissions", enabled: true },
+      { label: "Online Status", href: "/administration/online-status", enabled: true },
+      { label: "Security", href: "/administration/security", enabled: true },
       { label: "Audit Log", href: "/administration/audit-log", enabled: true },
     ],
   },
@@ -154,7 +155,7 @@ export const NAV_TREE: NavGroup[] = [
     label: "System Audit",
     enabled: false,
     children: [
-      { label: "Monatsbericht", enabled: false },
+      { label: "Monatsbericht", href: "/system-audit/report", enabled: true },
       { label: "Historie", enabled: false },
     ],
   },
