@@ -118,7 +118,7 @@ export const NAV_TREE: NavGroup[] = [
     enabled: false,
     children: [
       { label: "App Status", href: "/app-control/status", enabled: true },
-      { label: "Module", enabled: false },
+      { label: "Module", href: "/app-control/modules", enabled: true },
       { label: "Feature Flags", href: "/app-control/feature-flags", enabled: true },
       { label: "Wartungsmodus", href: "/app-control/status", enabled: true },
       { label: "Rollouts", href: "/app-control/feature-flags", enabled: true },
@@ -156,7 +156,7 @@ export const NAV_TREE: NavGroup[] = [
     enabled: false,
     children: [
       { label: "Monatsbericht", href: "/system-audit/report", enabled: true },
-      { label: "Historie", enabled: false },
+      { label: "Historie", href: "/system-audit/history", enabled: true },
     ],
   },
 ];

@@ -577,3 +577,21 @@ export interface PermissionsCatalog {
   roleDefaults: Record<string, string[]>;
   roles: string[];
 }
+
+export interface ModuleControl {
+  module_key: string;
+  label: string;
+  description?: string | null;
+  enabled: boolean;
+  enforced_in_backend: boolean;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
+
+export interface SystemAuditRun {
+  id: number;
+  critical_count: number;
+  warning_count: number;
+  report_text: string;
+  generated_at?: string | null;
+}
