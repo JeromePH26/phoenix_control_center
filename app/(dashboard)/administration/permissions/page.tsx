@@ -4,7 +4,34 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
-import type { PermissionsCatalog } from "@/lib/types";
+import { roleLabel, type PermissionsCatalog } from "@/lib/types";
+
+const AREA_LABEL: Record<string, string> = {
+  employees: "Mitarbeiter",
+  audit: "Audit Log",
+  search: "Suche",
+  overview: "Übersicht",
+  apiUsage: "API-Nutzung",
+  jobs: "Jobs",
+  appControl: "App-Steuerung",
+  devices: "Geräte",
+  support: "Support-Tickets",
+  news: "News",
+  faq: "FAQ",
+  advertising: "Werbung",
+  push: "Push-Nachrichten",
+  premium: "Premium-Funktionen",
+};
+const ACTION_LABEL: Record<string, string> = {
+  view: "ansehen",
+  manage: "bearbeiten",
+};
+function permissionLabel(permission: string): string {
+  const [area, action] = permission.split(".");
+  const areaLabel = AREA_LABEL[area] ?? area;
+  const actionLabel = ACTION_LABEL[action] ?? action ?? "";
+  return actionLabel ? `${areaLabel} ${actionLabel}` : areaLabel;
+}
 
 export default async function PermissionsPage() {
   const token = cookies().get(SESSION_COOKIE_NAME)?.value ?? null;
@@ -51,12 +78,12 @@ export default async function PermissionsPage() {
                 <th className="px-4 py-2 font-medium">
                   <span className="inline-flex items-center gap-1">
                     Recht
-                    <InfoTooltip text="Technischer Code für eine einzelne Berechtigung im System (z.B. 'employees.view' = darf Mitarbeiterliste sehen)." />
+                    <InfoTooltip text="Eine einzelne Berechtigung im System, z.B. 'darf Mitarbeiterliste ansehen'." />
                   </span>
                 </th>
                 {catalog.roles.map((role) => (
                   <th key={role} className="px-4 py-2 font-medium">
-                    {role}
+                    {roleLabel(role)}
                   </th>
                 ))}
               </tr>
@@ -64,7 +91,10 @@ export default async function PermissionsPage() {
             <tbody className="divide-y divide-neutral-100">
               {catalog.allPermissions.map((permission) => (
                 <tr key={permission}>
-                  <td className="px-4 py-2 font-mono text-xs text-neutral-700">{permission}</td>
+                  <td className="px-4 py-2 text-neutral-700">
+                    {permissionLabel(permission)}
+                    <span className="ml-1.5 font-mono text-[10px] text-neutral-400">({permission})</span>
+                  </td>
                   {catalog.roles.map((role) => {
                     const granted = role === "OWNER" || (catalog!.roleDefaults[role] ?? []).includes(permission);
                     return (

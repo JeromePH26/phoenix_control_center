@@ -22,6 +22,10 @@ function toneFor(status: string): "green" | "gold" | "red" | "neutral" {
   return STATUSES.find((s) => s.value === status)?.tone ?? "neutral";
 }
 
+function labelFor(status: string): string {
+  return STATUSES.find((s) => s.value === status)?.label ?? status;
+}
+
 export default function AppControlStatusClient() {
   const [status, setStatus] = useState<AppControlStatus | null>(null);
   const [state, setState] = useState<LoadState>("loading");
@@ -122,7 +126,7 @@ export default function AppControlStatusClient() {
 
       {state === "loaded" && status && (
         <>
-          <Card title="Aktueller Status" action={<Badge tone={toneFor(status.status)}>{status.status}</Badge>}>
+          <Card title="Aktueller Status" action={<Badge tone={toneFor(status.status)}>{labelFor(status.status)}</Badge>}>
             <KeyValueList
               data={{
                 Nachricht: status.message ?? null,

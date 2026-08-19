@@ -20,6 +20,15 @@ function statusTone(status: string): "gold" | "green" | "red" {
   return "gold";
 }
 
+const FAQ_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Entwurf",
+  PUBLISHED: "Veröffentlicht",
+  ARCHIVED: "Archiviert",
+};
+function faqStatusLabel(status: string): string {
+  return FAQ_STATUS_LABEL[status] ?? status;
+}
+
 const inputClass =
   "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 const labelClass = "mb-1 block text-xs font-medium text-neutral-600";
@@ -92,7 +101,7 @@ export default function FaqClient() {
     { header: "Titel", cell: (a) => a.title },
     { header: "Kategorie", cell: (a) => a.category },
     { header: "Position", info: "Reihenfolge in der Liste — kleinere Zahl erscheint weiter oben.", cell: (a) => a.position },
-    { header: "Status", info: "DRAFT = Entwurf, noch nicht sichtbar. PUBLISHED = live in der App. ARCHIVED = nicht mehr sichtbar.", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
+    { header: "Status", cell: (a) => <Badge tone={statusTone(a.status)}>{faqStatusLabel(a.status)}</Badge> },
     {
       header: "",
       cell: (a) => (
@@ -182,7 +191,7 @@ export default function FaqClient() {
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {faqStatusLabel(s)}
                     </option>
                   ))}
                 </select>

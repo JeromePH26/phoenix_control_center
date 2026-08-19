@@ -21,6 +21,16 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const JOB_STATUS_LABEL: Record<string, string> = {
+  completed: "Fertig",
+  running: "Läuft",
+  failed: "Fehlgeschlagen",
+  pending: "Wartet",
+};
+function jobStatusLabel(status: string): string {
+  return JOB_STATUS_LABEL[status] ?? status;
+}
+
 export default function FootballSettlementClient() {
   const [coverage, setCoverage] = useState<Record<string, unknown> | null>(null);
   const [coverageState, setCoverageState] = useState<LoadState>("loading");
@@ -125,7 +135,7 @@ export default function FootballSettlementClient() {
 
   const columns: Column<SettlementJob>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{jobStatusLabel(j.status)}</Badge> },
     {
       header: "Fortschritt",
       info: "geprüft = angeschaut, abgerechnet = Endergebnis nachgetragen, offen = noch nicht dran, fehlgeschlagen = ging schief.",

@@ -16,6 +16,38 @@ const STATUSES = ["NEU", "IN_BEARBEITUNG", "WARTET_AUF_NUTZER", "GELOEST", "GESC
 const PRIORITIES = ["niedrig", "normal", "hoch", "dringend"];
 const CATEGORIES = ["frage", "bug", "premium", "match", "sonstiges"];
 
+const TICKET_STATUS_LABEL: Record<string, string> = {
+  NEU: "Neu",
+  IN_BEARBEITUNG: "In Bearbeitung",
+  WARTET_AUF_NUTZER: "Wartet auf Nutzer",
+  GELOEST: "Gelöst",
+  GESCHLOSSEN: "Geschlossen",
+};
+function ticketStatusLabel(status: string): string {
+  return TICKET_STATUS_LABEL[status] ?? status;
+}
+
+const PRIORITY_LABEL: Record<string, string> = {
+  niedrig: "Niedrig",
+  normal: "Normal",
+  hoch: "Hoch",
+  dringend: "Dringend",
+};
+function priorityLabel(priority: string): string {
+  return PRIORITY_LABEL[priority] ?? priority;
+}
+
+const CATEGORY_LABEL: Record<string, string> = {
+  frage: "Frage",
+  bug: "Bug (Fehler)",
+  premium: "Premium-Problem",
+  match: "Spiel-bezogen",
+  sonstiges: "Sonstiges",
+};
+function categoryLabel(category: string): string {
+  return CATEGORY_LABEL[category] ?? category;
+}
+
 const selectClass =
   "rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
@@ -146,7 +178,7 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
 
       {state === "loaded" && ticket && (
         <>
-          <Card title={ticket.subject} action={<Badge tone="gold">{ticket.status}</Badge>}>
+          <Card title={ticket.subject} action={<Badge tone="gold">{ticketStatusLabel(ticket.status)}</Badge>}>
             <KeyValueList
               data={{
                 Nachricht: ticket.message,
@@ -182,7 +214,7 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {ticketStatusLabel(s)}
                     </option>
                   ))}
                 </select>
@@ -199,7 +231,7 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
                 >
                   {PRIORITIES.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {priorityLabel(p)}
                     </option>
                   ))}
                 </select>
@@ -216,7 +248,7 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {c}
+                      {categoryLabel(c)}
                     </option>
                   ))}
                 </select>

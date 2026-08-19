@@ -14,6 +14,31 @@ type LoadState = "loading" | "loaded" | "unreachable" | "error";
 
 const PAGE_SIZE = 50;
 
+const MATCH_STATUS_LABEL: Record<string, string> = {
+  TBD: "Termin steht noch nicht fest",
+  NS: "Noch nicht begonnen",
+  "1H": "1. Halbzeit läuft",
+  HT: "Halbzeitpause",
+  "2H": "2. Halbzeit läuft",
+  ET: "Verlängerung läuft",
+  BT: "Pause (Verlängerung)",
+  P: "Elfmeterschießen läuft",
+  SUSP: "Unterbrochen",
+  INT: "Unterbrochen",
+  LIVE: "Läuft",
+  FT: "Beendet",
+  AET: "Beendet (nach Verlängerung)",
+  PEN: "Beendet (nach Elfmeterschießen)",
+  PST: "Verschoben",
+  CANC: "Abgesagt",
+  ABD: "Abgebrochen",
+  AWD: "Am grünen Tisch entschieden",
+  WO: "Kampflos gewonnen",
+};
+function matchStatusLabel(status: string): string {
+  return MATCH_STATUS_LABEL[status] ?? status;
+}
+
 const inputClass =
   "rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
@@ -119,7 +144,7 @@ export default function FootballMatchesClient() {
     { header: "Liga", cell: (m) => m.league?.name ?? "–" },
     { header: "Heim", cell: (m) => m.homeTeam?.name ?? "–" },
     { header: "Gast", cell: (m) => m.awayTeam?.name ?? "–" },
-    { header: "Status", cell: (m) => (m.status ? <Badge tone="gold">{m.status}</Badge> : "–") },
+    { header: "Status", cell: (m) => (m.status ? <Badge tone="gold">{matchStatusLabel(m.status)}</Badge> : "–") },
     {
       header: "Ergebnis",
       cell: (m) =>
@@ -194,16 +219,14 @@ export default function FootballMatchesClient() {
           <label htmlFor="status" className="mb-1 block text-xs font-medium text-neutral-600">
             Status
           </label>
-          <input
-            id="status"
-            defaultValue={status}
-            placeholder="z.B. FINISHED"
-            className={inputClass}
-            onBlur={(e) => updateParam("status", e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") updateParam("status", (e.target as HTMLInputElement).value);
-            }}
-          />
+          <select id="status" value={status} className={inputClass} onChange={(e) => updateParam("status", e.target.value)}>
+            <option value="">Alle</option>
+            {Object.entries(MATCH_STATUS_LABEL).map(([code, label]) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
         <BoolSelect id="visible" label="Sichtbar" value={visible} onChange={(v) => updateParam("visible", v)} />
         <BoolSelect

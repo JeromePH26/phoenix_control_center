@@ -18,6 +18,11 @@ const SLOTS: { value: string; label: string }[] = [
   { value: "news_infeed", label: "News In-Feed" },
 ];
 const AUDIENCES = ["ALL", "FREE", "PREMIUM"];
+const AUDIENCE_LABEL: Record<string, string> = {
+  ALL: "Alle Nutzer",
+  FREE: "Nur ohne Premium",
+  PREMIUM: "Nur mit Premium",
+};
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
@@ -197,7 +202,7 @@ export default function CampaignDetailClient({ id }: { id: string }) {
                   <select className={inputClass} value={campaign.target_audience ?? "ALL"} onChange={(e) => field("target_audience", e.target.value)}>
                     {AUDIENCES.map((a) => (
                       <option key={a} value={a}>
-                        {a}
+                        {AUDIENCE_LABEL[a] ?? a}
                       </option>
                     ))}
                   </select>

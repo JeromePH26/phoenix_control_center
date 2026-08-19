@@ -14,6 +14,25 @@ type LoadState = "loading" | "loaded" | "unreachable" | "error";
 const AUDIENCES = ["ALL", "FREE", "PREMIUM", "BETA", "CUSTOM_SEGMENT"];
 const STAGES = ["STAGING", "PRODUCTION"];
 
+const AUDIENCE_LABEL: Record<string, string> = {
+  ALL: "Alle Nutzer",
+  FREE: "Nur ohne Premium",
+  PREMIUM: "Nur mit Premium",
+  BETA: "Nur Testnutzer",
+  CUSTOM_SEGMENT: "Spezielle Gruppe",
+};
+function audienceLabel(audience: string): string {
+  return AUDIENCE_LABEL[audience] ?? audience;
+}
+
+const STAGE_LABEL: Record<string, string> = {
+  STAGING: "Test (noch nicht live)",
+  PRODUCTION: "Live",
+};
+function stageLabel(stage: string): string {
+  return STAGE_LABEL[stage] ?? stage;
+}
+
 const inputClass =
   "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 const labelClass = "mb-1 block text-xs font-medium text-neutral-600";
@@ -145,7 +164,7 @@ export default function FeatureFlagsClient() {
         >
           {AUDIENCES.map((a) => (
             <option key={a} value={a}>
-              {a}
+              {audienceLabel(a)}
             </option>
           ))}
         </select>
@@ -162,7 +181,7 @@ export default function FeatureFlagsClient() {
         >
           {STAGES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {stageLabel(s)}
             </option>
           ))}
         </select>
@@ -180,8 +199,8 @@ export default function FeatureFlagsClient() {
             <InfoTooltip text="Feature Flag = Schalter für eine einzelne App-Funktion, mit dem man sie nur für bestimmte Nutzergruppen oder schrittweise einschalten kann." />
           </h1>
           <p className="text-sm text-neutral-400">
-            Feature Flags, Rollout-Prozentsatz und Staging in einem Modell — ein Flag mit stage=STAGING ist sein
-            eigener Entwurf.
+            Feature Flags, Rollout-Prozentsatz und Test/Live-Status in einem Modell — ein Flag auf &quot;Test&quot; ist
+            noch nicht für echte Nutzer sichtbar.
           </p>
         </div>
         <Button onClick={() => setCreating(true)}>Neues Flag</Button>

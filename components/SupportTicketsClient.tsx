@@ -33,6 +33,38 @@ function priorityTone(priority: string): "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const TICKET_STATUS_LABEL: Record<string, string> = {
+  NEU: "Neu",
+  IN_BEARBEITUNG: "In Bearbeitung",
+  WARTET_AUF_NUTZER: "Wartet auf Nutzer",
+  GELOEST: "Gelöst",
+  GESCHLOSSEN: "Geschlossen",
+};
+function ticketStatusLabel(status: string): string {
+  return TICKET_STATUS_LABEL[status] ?? status;
+}
+
+const PRIORITY_LABEL: Record<string, string> = {
+  niedrig: "Niedrig",
+  normal: "Normal",
+  hoch: "Hoch",
+  dringend: "Dringend",
+};
+function priorityLabel(priority: string): string {
+  return PRIORITY_LABEL[priority] ?? priority;
+}
+
+const CATEGORY_LABEL: Record<string, string> = {
+  frage: "Frage",
+  bug: "Bug (Fehler)",
+  premium: "Premium-Problem",
+  match: "Spiel-bezogen",
+  sonstiges: "Sonstiges",
+};
+function categoryLabel(category: string): string {
+  return CATEGORY_LABEL[category] ?? category;
+}
+
 function fmt(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
   return String(value);
@@ -87,9 +119,9 @@ export default function SupportTicketsClient() {
   const columns: Column<SupportTicket>[] = [
     { header: "ID", cell: (t) => <span className="font-medium text-neutral-900">#{t.id}</span> },
     { header: "Betreff", cell: (t) => t.subject },
-    { header: "Kategorie", cell: (t) => fmt(t.category) },
-    { header: "Status", info: "NEU = noch niemand hat sich gekümmert. WARTET_AUF_NUTZER = wir warten auf eine Antwort vom Nutzer. GELOEST/GESCHLOSSEN = erledigt.", cell: (t) => <Badge tone={statusTone(t.status)}>{t.status}</Badge> },
-    { header: "Priorität", info: "Wie dringend das Ticket bearbeitet werden sollte.", cell: (t) => <Badge tone={priorityTone(t.priority)}>{t.priority}</Badge> },
+    { header: "Kategorie", cell: (t) => (t.category ? categoryLabel(t.category) : "–") },
+    { header: "Status", cell: (t) => <Badge tone={statusTone(t.status)}>{ticketStatusLabel(t.status)}</Badge> },
+    { header: "Priorität", info: "Wie dringend das Ticket bearbeitet werden sollte.", cell: (t) => <Badge tone={priorityTone(t.priority)}>{priorityLabel(t.priority)}</Badge> },
     { header: "Zugewiesen", info: "Interne Nummer des Mitarbeiters, der sich um dieses Ticket kümmert.", cell: (t) => fmt(t.assigned_employee_id) },
     { header: "Erstellt", cell: (t) => fmt(t.created_at) },
     { header: "Aktualisiert", cell: (t) => fmt(t.updated_at) },
@@ -116,7 +148,7 @@ export default function SupportTicketsClient() {
             <option value="">Alle</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {ticketStatusLabel(s)}
               </option>
             ))}
           </select>

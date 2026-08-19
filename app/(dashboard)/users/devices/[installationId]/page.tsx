@@ -15,6 +15,22 @@ function fmt(value: unknown): string {
   return String(value);
 }
 
+const CATEGORY_LABEL: Record<string, string> = {
+  frage: "Frage",
+  bug: "Bug (Fehler)",
+  premium: "Premium-Problem",
+  match: "Spiel-bezogen",
+  sonstiges: "Sonstiges",
+};
+
+const TICKET_STATUS_LABEL: Record<string, string> = {
+  NEU: "Neu",
+  IN_BEARBEITUNG: "In Bearbeitung",
+  WARTET_AUF_NUTZER: "Wartet auf Nutzer",
+  GELOEST: "Gelöst",
+  GESCHLOSSEN: "Geschlossen",
+};
+
 export default async function DeviceDetailPage({ params }: { params: { installationId: string } }) {
   const token = cookies().get(SESSION_COOKIE_NAME)?.value ?? null;
 
@@ -48,8 +64,8 @@ export default async function DeviceDetailPage({ params }: { params: { installat
         </Link>
       ),
     },
-    { header: "Kategorie", cell: (t) => fmt(t.category) },
-    { header: "Status", cell: (t) => <Badge tone="neutral">{t.status}</Badge> },
+    { header: "Kategorie", cell: (t) => (t.category ? CATEGORY_LABEL[t.category] ?? t.category : "–") },
+    { header: "Status", cell: (t) => <Badge tone="neutral">{TICKET_STATUS_LABEL[t.status] ?? t.status}</Badge> },
     { header: "Erstellt", cell: (t) => fmt(t.created_at) },
   ];
 

@@ -18,6 +18,16 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const RUN_STATUS_LABEL: Record<string, string> = {
+  completed: "Fertig",
+  running: "Läuft",
+  failed: "Fehlgeschlagen",
+  pending: "Wartet",
+};
+function runStatusLabel(status: string): string {
+  return RUN_STATUS_LABEL[status] ?? status;
+}
+
 function fmt(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
   return String(value);
@@ -54,8 +64,8 @@ export default function LearningRunsClient() {
 
   const columns: Column<LearningRun>[] = [
     { header: "ID", cell: (r) => <span className="font-medium text-neutral-900">#{r.id}</span> },
-    { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{r.status}</Badge> },
-    { header: "Auslöser", info: "manual = von Hand gestartet. scheduled = automatisch nach Zeitplan.", cell: (r) => fmt(r.trigger_type) },
+    { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{runStatusLabel(r.status)}</Badge> },
+    { header: "Auslöser", cell: (r) => (r.trigger_type === "manual" ? "Manuell gestartet" : r.trigger_type === "scheduled" ? "Automatisch nach Zeitplan" : fmt(r.trigger_type)) },
     { header: "Schritt", cell: (r) => fmt(r.current_step) },
     { header: "Ligen / Märkte", cell: (r) => `${fmt(r.leagues_processed)} / ${fmt(r.markets_processed)}` },
     {

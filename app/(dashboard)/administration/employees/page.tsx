@@ -9,7 +9,7 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NewEmployeeModal from "@/components/NewEmployeeModal";
-import type { Employee } from "@/lib/types";
+import { roleLabel, type Employee } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "forbidden" | "unreachable" | "error";
 
@@ -75,7 +75,7 @@ export default function EmployeesPage() {
     { header: "Name", cell: (e) => <span className="font-medium text-neutral-900">{e.name}</span> },
     { header: "Login", cell: (e) => e.login },
     { header: "E-Mail", cell: (e) => e.email },
-    { header: "Rolle", info: "Legt fest, welche Rechte der Mitarbeiter standardmäßig hat (siehe Seite 'Rechte').", cell: (e) => <Badge tone="gold">{e.role}</Badge> },
+    { header: "Rolle", info: "Legt fest, welche Rechte der Mitarbeiter standardmäßig hat (siehe Seite 'Rechte').", cell: (e) => <Badge tone="gold">{roleLabel(e.role)}</Badge> },
     { header: "Abteilung", cell: (e) => e.department || "–" },
     {
       header: "Status",

@@ -18,6 +18,16 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const RUN_STATUS_LABEL: Record<string, string> = {
+  completed: "Fertig",
+  running: "Läuft",
+  failed: "Fehlgeschlagen",
+  pending: "Wartet",
+};
+function runStatusLabel(status: string): string {
+  return RUN_STATUS_LABEL[status] ?? status;
+}
+
 export default function LearningRunDetailClient({ id }: { id: string }) {
   const [run, setRun] = useState<LearningRun | null>(null);
   const [state, setState] = useState<LoadState>("loading");
@@ -69,15 +79,15 @@ export default function LearningRunDetailClient({ id }: { id: string }) {
 
       {state === "loaded" && run && (
         <>
-          <Card title="Übersicht" action={<Badge tone={statusTone(run.status)}>{run.status}</Badge>}>
+          <Card title="Übersicht" action={<Badge tone={statusTone(run.status)}>{runStatusLabel(run.status)}</Badge>}>
             <KeyValueList
               data={{
-                Auslöser: run.trigger_type,
+                Auslöser: run.trigger_type === "manual" ? "Manuell gestartet" : run.trigger_type === "scheduled" ? "Automatisch nach Zeitplan" : run.trigger_type,
                 Schritt: run.current_step,
                 "Ligen verarbeitet": run.leagues_processed,
                 "Märkte verarbeitet": run.markets_processed,
-                "Eligible Matches": run.eligible_matches,
-                "Excluded Matches": run.excluded_matches,
+                "Lernfähige Spiele": run.eligible_matches,
+                "Ausgeschlossene Spiele": run.excluded_matches,
                 "Challenger erstellt": run.challengers_created,
                 Gestartet: run.started_at,
                 Beendet: run.completed_at,

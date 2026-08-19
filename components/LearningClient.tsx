@@ -21,6 +21,16 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const RUN_STATUS_LABEL: Record<string, string> = {
+  completed: "Fertig",
+  running: "Läuft",
+  failed: "Fehlgeschlagen",
+  pending: "Wartet",
+};
+function runStatusLabel(status: string): string {
+  return RUN_STATUS_LABEL[status] ?? status;
+}
+
 function fmt(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
   return String(value);
@@ -89,7 +99,7 @@ export default function LearningClient() {
 
   const runColumns: Column<LearningRun>[] = [
     { header: "ID", cell: (r) => <span className="font-medium text-neutral-900">#{r.id}</span> },
-    { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{r.status}</Badge> },
+    { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{runStatusLabel(r.status)}</Badge> },
     { header: "Auslöser", cell: (r) => fmt(r.trigger_type) },
     { header: "Ligen / Märkte", cell: (r) => `${fmt(r.leagues_processed)} / ${fmt(r.markets_processed)}` },
     { header: "Challenger erstellt", cell: (r) => fmt(r.challengers_created) },
@@ -98,10 +108,10 @@ export default function LearningClient() {
 
   const perLeagueColumns: Column<EligibilityAudit["perLeague"][number]>[] = [
     { header: "Liga", cell: (l) => l.leagueId },
-    { header: "Gespeichert", cell: (l) => l.storedSnapshots },
-    { header: "Whitelisted", cell: (l) => l.whitelisted },
-    { header: "Settled", cell: (l) => l.settled },
-    { header: "Eligible", cell: (l) => l.eligible },
+    { header: "Gespeichert", info: "Anzahl der für diese Liga gespeicherten Spiel-Datensätze.", cell: (l) => l.storedSnapshots },
+    { header: "Freigegeben", info: "Anzahl der Spiele in dieser Liga, die auf der Whitelist stehen (manuell freigegeben).", cell: (l) => l.whitelisted },
+    { header: "Abgerechnet", info: "Anzahl der Spiele in dieser Liga, für die schon ein Endergebnis eingetragen wurde.", cell: (l) => l.settled },
+    { header: "Lernfähig", info: "Anzahl der Spiele in dieser Liga, die aktuell zum Lernen genutzt werden können.", cell: (l) => l.eligible },
   ];
 
   return (
@@ -128,9 +138,9 @@ export default function LearningClient() {
             title="Status"
             action={
               <div className="flex gap-1.5">
-                <Badge tone="green">Generative AI: {overview.generativeAi ?? "OFF"}</Badge>
+                <Badge tone="green">Generative KI: {overview.generativeAi === "OFF" || !overview.generativeAi ? "Aus" : "An"}</Badge>
                 <Badge tone={overview.promotionEnabled ? "gold" : "neutral"}>
-                  Promotion: {overview.promotionEnabled ? "aktiviert" : "deaktiviert"}
+                  Automatische Beförderung: {overview.promotionEnabled ? "aktiviert" : "deaktiviert"}
                 </Badge>
               </div>
             }
@@ -170,12 +180,12 @@ export default function LearningClient() {
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{audit.totalStoredSnapshots}</p>
                 </div>
                 <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
-                  <p className="text-xs text-neutral-500">Eligible</p>
+                  <p className="text-xs text-neutral-500">Lernfähig</p>
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{audit.eligible}</p>
                 </div>
                 <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
                   <p className="flex items-center gap-1 text-xs text-neutral-500">
-                    Not Eligible
+                    Nicht lernfähig
                     <InfoTooltip text="Spiele, die (noch) nicht fürs Lernen verwendet werden können, z.B. weil das Ergebnis fehlt oder die Liga nicht freigeschaltet ist." />
                   </p>
                   <p className="mt-0.5 text-xl font-semibold text-neutral-900">{audit.notEligible}</p>

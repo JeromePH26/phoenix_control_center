@@ -19,6 +19,15 @@ function fmt(value: unknown): string {
   return String(value);
 }
 
+const MODEL_STATUS_LABEL: Record<string, string> = {
+  champion: "Champion (aktiv)",
+  challenger: "Herausforderer",
+  retired: "Ausgemustert",
+};
+function modelStatusLabel(status: string): string {
+  return MODEL_STATUS_LABEL[status] ?? status;
+}
+
 export default function ModelDetailClient({ id }: { id: string }) {
   const [model, setModel] = useState<ModelVersionDetail | null>(null);
   const [overview, setOverview] = useState<ModelLabOverview | null>(null);
@@ -81,18 +90,24 @@ export default function ModelDetailClient({ id }: { id: string }) {
     }
   }
 
+  const EVAL_TYPE_LABEL: Record<string, string> = {
+    walk_forward: "Test an echten, vergangenen Spielen",
+    holdout: "Test an echten, vergangenen Spielen",
+    shadow: "Live-Vergleich zum Champion",
+    monthly_review: "Monatlicher Check",
+  };
+
   const evaluationColumns: Column<ModelEvaluation>[] = [
     {
-      header: "Typ",
-      info: "Wie das Modell getestet wurde: walk_forward/holdout = an vergangenen, echten Spielen; shadow = im Live-Vergleich zum aktuellen Champion; monthly_review = beim monatlichen Check.",
-      cell: (e) => <Badge tone="neutral">{e.evaluation_type}</Badge>,
+      header: "Testart",
+      cell: (e) => <Badge tone="neutral">{EVAL_TYPE_LABEL[e.evaluation_type] ?? e.evaluation_type}</Badge>,
     },
-    { header: "Scope", info: "Welche Spiele einbezogen wurden (z.B. alle oder nur 'saubere' Fälle ohne Störfaktoren).", cell: (e) => fmt(e.match_scope) },
+    { header: "Umfang", info: "Welche Spiele einbezogen wurden (z.B. alle oder nur 'saubere' Fälle ohne Störfaktoren).", cell: (e) => fmt(e.match_scope) },
     { header: "Liga", cell: (e) => fmt(e.league_id ?? "GLOBAL") },
-    { header: "Sample", info: "Anzahl Spiele, auf denen dieses Testergebnis beruht.", cell: (e) => fmt(e.sample_size) },
+    { header: "Stichprobe", info: "Anzahl Spiele, auf denen dieses Testergebnis beruht.", cell: (e) => fmt(e.sample_size) },
     {
-      header: "Brier",
-      info: "Brier Score: misst, wie gut die vorhergesagten Wahrscheinlichkeiten zum tatsächlichen Ausgang gepasst haben. Niedriger = besser, 0 wäre perfekt.",
+      header: "Brier Score",
+      info: "Misst, wie gut die vorhergesagten Wahrscheinlichkeiten zum tatsächlichen Ausgang gepasst haben. Niedriger = besser, 0 wäre perfekt.",
       cell: (e) => fmt(e.brier_score),
     },
     {
@@ -100,8 +115,8 @@ export default function ModelDetailClient({ id }: { id: string }) {
       info: "Ähnlich wie Brier Score, bestraft aber sehr selbstsichere Fehlvorhersagen stärker. Niedriger = besser.",
       cell: (e) => fmt(e.log_loss),
     },
-    { header: "Accuracy", info: "Anteil der Spiele, bei denen die wahrscheinlichste Vorhersage tatsächlich eingetroffen ist. Höher = besser.", cell: (e) => fmt(e.accuracy) },
-    { header: "ROI", info: "Return on Investment: fiktiver Gewinn/Verlust in Prozent, wenn man nach diesem Modell gewettet hätte.", cell: (e) => fmt(e.roi) },
+    { header: "Trefferquote", info: "Anteil der Spiele, bei denen die wahrscheinlichste Vorhersage tatsächlich eingetroffen ist. Höher = besser.", cell: (e) => fmt(e.accuracy) },
+    { header: "Fiktiver Gewinn (ROI)", info: "Fiktiver Gewinn/Verlust in Prozent, wenn man nach diesem Modell gewettet hätte.", cell: (e) => fmt(e.roi) },
     { header: "Erstellt", cell: (e) => fmt(e.created_at) },
   ];
 
@@ -127,35 +142,36 @@ export default function ModelDetailClient({ id }: { id: string }) {
 
       {state === "loaded" && model && (
         <>
-          <Card title={model.readable_version} action={<Badge tone={model.status === "champion" ? "gold" : "neutral"}>{model.status}</Badge>}>
+          <Card title={model.readable_version} action={<Badge tone={model.status === "champion" ? "gold" : "neutral"}>{modelStatusLabel(model.status)}</Badge>}>
             <KeyValueList
               data={{
                 Liga: model.league_id ?? "GLOBAL",
                 Markt: model.market,
                 Generation: model.generation,
                 "Übergeordnetes Modell": model.parent_model_id,
-                "Training-Samples": model.training_count,
-                "Validation-Samples": model.validation_count,
-                "Holdout-Samples": model.holdout_count,
-                "Shadow-Samples": model.shadow_count,
+                "Trainiert mit (Spiele)": model.training_count,
+                "Geprüft mit (Spiele)": model.validation_count,
+                "Zusätzlich getestet mit (Spiele)": model.holdout_count,
+                "Im Live-Vergleich getestet (Spiele)": model.shadow_count,
                 "Champion seit": model.champion_since,
-                "Letzte Promotion": model.last_promotion_at,
+                "Letzte Beförderung": model.last_promotion_at,
                 "Vorheriger Champion": model.previous_champion_id,
-                "Config-Hash": model.config_hash,
-                "Schema-Version": model.code_schema_version,
                 Erstellt: model.created_at,
+              }}
+              info={{
+                "Übergeordnetes Modell": "Aus welchem Vorgänger-Modell dieses hervorgegangen ist (falls es eine Weiterentwicklung ist).",
               }}
             />
           </Card>
 
           {!promotionEnabled && (
             <StateMessage
-              title="Promotion ist deaktiviert"
-              description="PHOENIX_MODEL_PROMOTION_ENABLED=false — Champion-Wechsel sind serverseitig blockiert, unabhängig von dieser Ansicht."
+              title="Beförderung ist deaktiviert"
+              description="Ein Modell kann aktuell nicht zum Champion befördert werden — das ist serverseitig gesperrt, unabhängig von dieser Ansicht."
             />
           )}
 
-          <Card title="Aktionen" action={<span className="text-xs text-neutral-400">Danger Zone</span>}>
+          <Card title="Aktionen" action={<span className="text-xs text-neutral-400">Vorsicht, wirkt sich direkt auf echte Tipps aus</span>}>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="primary"
@@ -175,16 +191,23 @@ export default function ModelDetailClient({ id }: { id: string }) {
                   setError(null);
                 }}
               >
-                Rollback auf dieses Modell
+                Zurück zu diesem Modell wechseln
               </Button>
             </div>
           </Card>
 
-          <Card title="Weights & Feature-Config">
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Interne Modell-Daten
+                <InfoTooltip text="Rohdaten des Modells (Gewichte, verwendete Merkmale, Bewertungszusammenfassung) — rein technisch, für Entwickler relevant." />
+              </span>
+            }
+          >
             <div className="flex gap-4">
-              <JsonViewer value={model.weights} label="Weights" />
-              <JsonViewer value={model.feature_config} label="Feature-Config" />
-              <JsonViewer value={model.evaluation_summary} label="Evaluation-Summary" />
+              <JsonViewer value={model.weights} label="Gewichte" />
+              <JsonViewer value={model.feature_config} label="Merkmale" />
+              <JsonViewer value={model.evaluation_summary} label="Auswertungs-Zusammenfassung" />
             </div>
           </Card>
 

@@ -23,6 +23,17 @@ const STATUS_ACTIONS: { status: string; label: string; variant: "primary" | "sec
   { status: "ARCHIVED", label: "Archivieren", variant: "danger" },
 ];
 
+const ARTICLE_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Entwurf",
+  SCHEDULED: "Geplant",
+  PUBLISHED: "Veröffentlicht",
+  HIDDEN: "Versteckt",
+  ARCHIVED: "Archiviert",
+};
+function articleStatusLabel(status: string): string {
+  return ARTICLE_STATUS_LABEL[status] ?? status;
+}
+
 export default function NewsArticleClient({ id }: { id: string }) {
   const router = useRouter();
   const isNew = id === "new";
@@ -160,7 +171,7 @@ export default function NewsArticleClient({ id }: { id: string }) {
       {state === "loaded" && (
         <>
           {!isNew && (
-            <Card title="Status" action={<Badge tone="gold">{article.status}</Badge>}>
+            <Card title="Status" action={<Badge tone="gold">{articleStatusLabel(article.status ?? "DRAFT")}</Badge>}>
               <div className="flex flex-wrap gap-2">
                 {STATUS_ACTIONS.map((a) => (
                   <Button

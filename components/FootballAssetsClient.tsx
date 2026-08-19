@@ -20,6 +20,15 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const ASSET_STATUS_LABEL: Record<string, string> = {
+  OK: "Vorhanden",
+  MISSING: "Fehlt",
+  STALE: "Veraltet",
+};
+function assetStatusLabel(status: string): string {
+  return ASSET_STATUS_LABEL[status] ?? status;
+}
+
 const inputClass =
   "rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
@@ -59,7 +68,7 @@ export default function FootballAssetsClient() {
     { header: "Typ", info: "Ob es sich um ein Team- oder ein Liga-Wappen (Logo) handelt.", cell: (a) => a.type },
     { header: "Name", cell: (a) => a.entityName ?? a.id },
     { header: "ID", cell: (a) => a.id },
-    { header: "Status", info: "OK = Wappen vorhanden. MISSING = fehlt. STALE = veraltet, sollte aktualisiert werden.", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
+    { header: "Status", cell: (a) => <Badge tone={statusTone(a.status)}>{assetStatusLabel(a.status)}</Badge> },
     { header: "Aktualisiert", cell: (a) => a.updatedAt ?? "–" },
     {
       header: "",
@@ -92,9 +101,9 @@ export default function FootballAssetsClient() {
           className={inputClass}
         >
           <option value="">Alle</option>
-          <option value="MISSING">Missing</option>
-          <option value="OK">OK</option>
-          <option value="STALE">Stale</option>
+          <option value="MISSING">Fehlt</option>
+          <option value="OK">Vorhanden</option>
+          <option value="STALE">Veraltet</option>
         </select>
       </div>
 

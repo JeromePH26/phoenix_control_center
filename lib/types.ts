@@ -15,6 +15,19 @@ export const EMPLOYEE_ROLES: EmployeeRole[] = [
   "MARKETING",
 ];
 
+/** Plain-German display name for each role code, so the raw English constant never shows up in the UI directly. */
+export const ROLE_LABEL: Record<string, string> = {
+  OWNER: "Inhaber",
+  ADMIN: "Administrator",
+  TECHNICAL: "Technik",
+  SUPPORT: "Support",
+  CONTENT: "Redaktion",
+  MARKETING: "Marketing",
+};
+export function roleLabel(role: string): string {
+  return ROLE_LABEL[role] ?? role;
+}
+
 export interface Employee {
   id: string;
   name: string;

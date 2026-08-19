@@ -12,6 +12,35 @@ import type { AuditLogEntry } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "forbidden" | "unreachable" | "error";
 
+const AREA_LABEL: Record<string, string> = {
+  employees: "Mitarbeiter",
+  audit: "Audit Log",
+  search: "Suche",
+  overview: "Übersicht",
+  apiUsage: "API-Nutzung",
+  jobs: "Jobs",
+  appControl: "App-Steuerung",
+  devices: "Geräte",
+  support: "Support-Tickets",
+  news: "News",
+  faq: "FAQ",
+  advertising: "Werbung",
+  push: "Push-Nachrichten",
+  premium: "Premium-Funktionen",
+  football: "Football",
+  modelLab: "Model Lab",
+  featureFlags: "Feature Flags",
+  release: "Release Center",
+  incidents: "Incidents",
+  security: "Security",
+  moduleControl: "Module",
+};
+function areaLabel(area: string): string {
+  if (AREA_LABEL[area]) return AREA_LABEL[area];
+  const spaced = area.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[-_]/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 export default function AuditLogClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,7 +94,7 @@ export default function AuditLogClient() {
   const columns: Column<AuditLogEntry>[] = [
     { header: "Zeit", cell: (e) => <span className="whitespace-nowrap text-neutral-500">{e.createdAt}</span> },
     { header: "Mitarbeiter", cell: (e) => e.employeeLogin },
-    { header: "Bereich", info: "In welchem Teil des Systems die Änderung passiert ist (z.B. Mitarbeiter, Werbung).", cell: (e) => <Badge tone="gold">{e.area}</Badge> },
+    { header: "Bereich", info: "In welchem Teil des Systems die Änderung passiert ist.", cell: (e) => <Badge tone="gold">{areaLabel(e.area)}</Badge> },
     { header: "Objekt", info: "Der genaue Datensatz, der geändert wurde, mit seiner internen Nummer.", cell: (e) => `${e.objectType} #${e.objectId}` },
     { header: "Aktion", cell: (e) => e.action },
     { header: "Vorher", info: "Der Zustand der Daten, bevor die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.previousValue} label="Vorher" /> },

@@ -17,6 +17,15 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const ASSET_STATUS_LABEL: Record<string, string> = {
+  OK: "Vorhanden",
+  MISSING: "Fehlt",
+  STALE: "Veraltet",
+};
+function assetStatusLabel(status: string): string {
+  return ASSET_STATUS_LABEL[status] ?? status;
+}
+
 /**
  * There is no dedicated /api/admin/football/teams endpoint yet. This list
  * is derived from the asset inventory (team logos), which is the only
@@ -55,7 +64,7 @@ export default function FootballTeamsClient() {
   const columns: Column<FootballAsset>[] = [
     { header: "Team", cell: (t) => <span className="font-medium text-neutral-900">{t.entityName ?? t.id}</span> },
     { header: "ID", cell: (t) => t.id },
-    { header: "Wappen-Status", info: "OK = Logo vorhanden. MISSING = fehlt. STALE = veraltet, sollte aktualisiert werden.", cell: (t) => <Badge tone={statusTone(t.status)}>{t.status}</Badge> },
+    { header: "Wappen-Status", cell: (t) => <Badge tone={statusTone(t.status)}>{assetStatusLabel(t.status)}</Badge> },
     { header: "Aktualisiert", cell: (t) => t.updatedAt ?? "–" },
   ];
 

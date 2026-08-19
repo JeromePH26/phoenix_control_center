@@ -17,6 +17,15 @@ function statusTone(status: string): "gold" | "neutral" | "red" {
   return "neutral";
 }
 
+const MODEL_STATUS_LABEL: Record<string, string> = {
+  champion: "Champion (aktiv)",
+  challenger: "Herausforderer",
+  retired: "Ausgemustert",
+};
+function modelStatusLabel(status: string): string {
+  return MODEL_STATUS_LABEL[status] ?? status;
+}
+
 const TITLES: Record<string, { title: string; description: string }> = {
   champion: { title: "Champions", description: "Aktuell aktive Champion-Modelle je Liga × Markt." },
   challenger: { title: "Challenger", description: "Herausforderer-Modelle, die gegen den jeweiligen Champion evaluiert werden." },
@@ -68,7 +77,7 @@ export default function ModelsClient() {
     {
       header: "Status",
       info: "champion = aktuell aktives Modell, das echte Tipps beeinflusst. challenger = Herausforderer, wird nur zum Vergleich getestet. retired = ausgemustert, nicht mehr aktiv.",
-      cell: (m) => <Badge tone={statusTone(m.status)}>{m.status}</Badge>,
+      cell: (m) => <Badge tone={statusTone(m.status)}>{modelStatusLabel(m.status)}</Badge>,
     },
     {
       header: "Generation",

@@ -18,6 +18,15 @@ const SLOT_LABELS: Record<string, string> = {
   news_infeed: "News In-Feed",
 };
 
+const AUDIENCE_LABEL: Record<string, string> = {
+  ALL: "Alle Nutzer",
+  FREE: "Nur ohne Premium",
+  PREMIUM: "Nur mit Premium",
+};
+function audienceLabel(audience: string): string {
+  return AUDIENCE_LABEL[audience] ?? audience;
+}
+
 function fmt(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
   return String(value);
@@ -63,7 +72,7 @@ export default function CampaignsListClient({ slotFilter }: { slotFilter?: strin
     },
     { header: "Slot", info: "An welcher Stelle in der App die Werbung angezeigt wird.", cell: (c) => SLOT_LABELS[c.slot] ?? c.slot },
     { header: "Aktiv", cell: (c) => <Badge tone={c.active ? "green" : "neutral"}>{c.active ? "Ja" : "Nein"}</Badge> },
-    { header: "Zielgruppe", info: "Welche Nutzer die Werbung sehen: ALL = alle, FREE = nur ohne Premium, PREMIUM = nur mit Premium.", cell: (c) => c.target_audience },
+    { header: "Zielgruppe", cell: (c) => audienceLabel(c.target_audience) },
     { header: "Zeitraum", cell: (c) => `${fmt(c.start_date)} – ${fmt(c.end_date)}` },
     { header: "Impressions", info: "Wie oft die Werbung angezeigt wurde.", cell: (c) => c.impressions },
     { header: "Klicks", info: "Wie oft jemand auf die Werbung geklickt hat.", cell: (c) => c.clicks },

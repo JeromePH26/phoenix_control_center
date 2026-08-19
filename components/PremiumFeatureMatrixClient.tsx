@@ -18,6 +18,15 @@ function tierTone(tier: string): "green" | "gold" | "red" {
   return "green";
 }
 
+const TIER_LABEL: Record<string, string> = {
+  FREE: "Kostenlos",
+  PREMIUM: "Premium",
+  DISABLED: "Deaktiviert",
+};
+function tierLabel(tier: string): string {
+  return TIER_LABEL[tier] ?? tier;
+}
+
 const selectClass =
   "rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
@@ -80,7 +89,7 @@ export default function PremiumFeatureMatrixClient() {
 
   const columns: Column<PremiumFeature>[] = [
     { header: "Feature", cell: (f) => <span className="font-medium text-neutral-900">{f.feature_label}</span> },
-    { header: "Aktuell", info: "FREE = für alle nutzbar. PREMIUM = nur für zahlende Nutzer. DISABLED = für niemanden aktiv.", cell: (f) => <Badge tone={tierTone(f.tier)}>{f.tier}</Badge> },
+    { header: "Aktuell", cell: (f) => <Badge tone={tierTone(f.tier)}>{tierLabel(f.tier)}</Badge> },
     {
       header: "Ändern",
       cell: (f) => (
@@ -92,7 +101,7 @@ export default function PremiumFeatureMatrixClient() {
         >
           {TIERS.map((t) => (
             <option key={t} value={t}>
-              {t}
+              {tierLabel(t)}
             </option>
           ))}
         </select>

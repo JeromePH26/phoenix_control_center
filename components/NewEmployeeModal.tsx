@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { EMPLOYEE_ROLES, EmployeeRole } from "@/lib/types";
+import { EMPLOYEE_ROLES, EmployeeRole, roleLabel } from "@/lib/types";
 
 export default function NewEmployeeModal({
   onClose,
@@ -89,7 +89,7 @@ export default function NewEmployeeModal({
               className={inputClass}
             >
               {EMPLOYEE_ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>{roleLabel(r)}</option>
               ))}
             </select>
           </div>

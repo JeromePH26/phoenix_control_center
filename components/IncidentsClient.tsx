@@ -27,6 +27,24 @@ function statusTone(status: string): "red" | "gold" | "green" {
   return "green";
 }
 
+const SEVERITY_LABEL: Record<string, string> = {
+  minor: "Klein",
+  major: "Groß",
+  critical: "Schwerwiegend",
+};
+function severityLabel(severity: string): string {
+  return SEVERITY_LABEL[severity] ?? severity;
+}
+
+const INCIDENT_STATUS_LABEL: Record<string, string> = {
+  OPEN: "Offen",
+  MONITORING: "Wird beobachtet",
+  RESOLVED: "Abgeschlossen",
+};
+function incidentStatusLabel(status: string): string {
+  return INCIDENT_STATUS_LABEL[status] ?? status;
+}
+
 const inputClass =
   "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 const labelClass = "mb-1 block text-xs font-medium text-neutral-600";
@@ -135,8 +153,8 @@ export default function IncidentsClient() {
         </button>
       ),
     },
-    { header: "Schwere", info: "Wie stark die Störung Nutzer betroffen hat: minor (klein) → major (groß) → critical (schwerwiegend).", cell: (i) => <Badge tone={severityTone(i.severity)}>{i.severity}</Badge> },
-    { header: "Status", info: "OPEN = Störung läuft noch. MONITORING = behoben, wird beobachtet. RESOLVED = abgeschlossen.", cell: (i) => <Badge tone={statusTone(i.status)}>{i.status}</Badge> },
+    { header: "Schwere", info: "Wie stark die Störung Nutzer betroffen hat.", cell: (i) => <Badge tone={severityTone(i.severity)}>{severityLabel(i.severity)}</Badge> },
+    { header: "Status", cell: (i) => <Badge tone={statusTone(i.status)}>{incidentStatusLabel(i.status)}</Badge> },
     { header: "Betroffene Systeme", cell: (i) => fmt(i.affected_systems) },
     { header: "Beginn", cell: (i) => fmt(i.started_at) },
     { header: "Ende", cell: (i) => fmt(i.ended_at) },
@@ -183,7 +201,7 @@ export default function IncidentsClient() {
                 <select className={inputClass} value={newIncident.severity} onChange={(e) => setNewIncident({ ...newIncident, severity: e.target.value })}>
                   {SEVERITIES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {severityLabel(s)}
                     </option>
                   ))}
                 </select>
@@ -223,7 +241,7 @@ export default function IncidentsClient() {
                 <select className={inputClass} value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value })}>
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {incidentStatusLabel(s)}
                     </option>
                   ))}
                 </select>
@@ -233,7 +251,7 @@ export default function IncidentsClient() {
                 <select className={inputClass} value={editing.severity} onChange={(e) => setEditing({ ...editing, severity: e.target.value })}>
                   {SEVERITIES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {severityLabel(s)}
                     </option>
                   ))}
                 </select>

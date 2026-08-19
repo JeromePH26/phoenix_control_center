@@ -22,6 +22,17 @@ function statusTone(status: string): "gold" | "green" | "neutral" | "red" {
   return "neutral";
 }
 
+const ARTICLE_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Entwurf",
+  SCHEDULED: "Geplant",
+  PUBLISHED: "Veröffentlicht",
+  HIDDEN: "Versteckt",
+  ARCHIVED: "Archiviert",
+};
+function articleStatusLabel(status: string): string {
+  return ARTICLE_STATUS_LABEL[status] ?? status;
+}
+
 function fmt(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
   return String(value);
@@ -77,7 +88,7 @@ export default function NewsListClient() {
       ),
     },
     { header: "Kategorie", cell: (a) => a.category },
-    { header: "Status", info: "DRAFT = Entwurf, noch nicht sichtbar. SCHEDULED = geplant für später. PUBLISHED = live in der App. HIDDEN/ARCHIVED = nicht mehr sichtbar.", cell: (a) => <Badge tone={statusTone(a.status)}>{a.status}</Badge> },
+    { header: "Status", cell: (a) => <Badge tone={statusTone(a.status)}>{articleStatusLabel(a.status)}</Badge> },
     { header: "Homepage", info: "Wird auf der Startseite der App besonders hervorgehoben.", cell: (a) => (a.homepage_feature ? <Badge tone="gold">Feature</Badge> : "–") },
     { header: "Breaking", info: "Als Eilmeldung markiert — wird besonders auffällig angezeigt.", cell: (a) => (a.breaking ? <Badge tone="red">Breaking</Badge> : "–") },
     { header: "Erstellt", cell: (a) => fmt(a.created_at) },
@@ -108,7 +119,7 @@ export default function NewsListClient() {
             <option value="">Alle</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {articleStatusLabel(s)}
               </option>
             ))}
           </select>

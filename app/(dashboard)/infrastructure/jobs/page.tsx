@@ -16,6 +16,16 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   return "neutral";
 }
 
+const JOB_STATUS_LABEL: Record<string, string> = {
+  completed: "Fertig",
+  running: "Läuft",
+  failed: "Fehlgeschlagen",
+  pending: "Wartet",
+};
+function jobStatusLabel(status: string): string {
+  return JOB_STATUS_LABEL[status] ?? status;
+}
+
 function fmt(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
   return String(value);
@@ -69,7 +79,7 @@ export default async function JobsPage() {
 
   const dailyPipelineColumns: Column<JobRow>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{jobStatusLabel(j.status)}</Badge> },
     { header: "Datum", cell: (j) => fmt(j.scan_date) },
     { header: "Schritt", info: "An welcher Stelle des Ablaufs sich der Job gerade befindet.", cell: (j) => fmt(j.current_step) },
     { header: "Verarbeitet / Veröffentlicht", info: "Anzahl bereits bearbeiteter Datensätze / davon in der App sichtbar gemacht.", cell: (j) => `${fmt(j.processed)} / ${fmt(j.published)}` },
@@ -81,7 +91,7 @@ export default async function JobsPage() {
 
   const settlementColumns: Column<JobRow>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
+    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{jobStatusLabel(j.status)}</Badge> },
     {
       header: "Fortschritt",
       info: "geprüft = angeschaut, abgerechnet = Tipp-Ergebnis final gebucht, offen = noch nicht dran, fehlgeschlagen = ging schief.",
@@ -97,8 +107,8 @@ export default async function JobsPage() {
 
   const learningRunColumns: Column<JobRow>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
-    { header: "Status", info: "completed = fertig. running = läuft gerade. failed = fehlgeschlagen.", cell: (j) => <Badge tone={statusTone(j.status)}>{j.status}</Badge> },
-    { header: "Auslöser", info: "Was diesen Lauf gestartet hat — manuell durch einen Mitarbeiter oder automatisch nach Zeitplan.", cell: (j) => fmt(j.trigger_type) },
+    { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{jobStatusLabel(j.status)}</Badge> },
+    { header: "Auslöser", cell: (j) => (j.trigger_type === "manual" ? "Manuell gestartet" : j.trigger_type === "scheduled" ? "Automatisch nach Zeitplan" : fmt(j.trigger_type)) },
     { header: "Schritt", info: "An welcher Stelle des Ablaufs sich der Job gerade befindet.", cell: (j) => fmt(j.current_step) },
     {
       header: "Ligen / Märkte / Challenger",

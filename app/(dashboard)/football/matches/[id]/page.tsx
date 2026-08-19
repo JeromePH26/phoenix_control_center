@@ -16,6 +16,31 @@ type LoadState = "loading" | "loaded" | "unreachable" | "notfound" | "error";
 
 type FlagKey = "visible" | "analysisEnabled" | "tipEnabled" | "learningEnabled" | "liveEnabled";
 
+const MATCH_STATUS_LABEL: Record<string, string> = {
+  TBD: "Termin steht noch nicht fest",
+  NS: "Noch nicht begonnen",
+  "1H": "1. Halbzeit läuft",
+  HT: "Halbzeitpause",
+  "2H": "2. Halbzeit läuft",
+  ET: "Verlängerung läuft",
+  BT: "Pause (Verlängerung)",
+  P: "Elfmeterschießen läuft",
+  SUSP: "Unterbrochen",
+  INT: "Unterbrochen",
+  LIVE: "Läuft",
+  FT: "Beendet",
+  AET: "Beendet (nach Verlängerung)",
+  PEN: "Beendet (nach Elfmeterschießen)",
+  PST: "Verschoben",
+  CANC: "Abgesagt",
+  ABD: "Abgebrochen",
+  AWD: "Am grünen Tisch entschieden",
+  WO: "Kampflos gewonnen",
+};
+function matchStatusLabel(status: string): string {
+  return MATCH_STATUS_LABEL[status] ?? status;
+}
+
 const FLAGS: { key: FlagKey; label: string; info: string }[] = [
   { key: "visible", label: "Sichtbar", info: "Aus = Nutzer sehen dieses Spiel gar nicht in der App." },
   { key: "analysisEnabled", label: "Analyse aktiviert", info: "Aus = PHÖNIX berechnet keine Prognose/Wahrscheinlichkeiten mehr für dieses Spiel." },
@@ -167,7 +192,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <div>
                 <p className="text-neutral-500">Status</p>
                 <p>
-                  <Badge tone="gold">{fmt(match.status)}</Badge>
+                  <Badge tone="gold">{match.status ? matchStatusLabel(match.status) : fmt(match.status)}</Badge>
                 </p>
               </div>
               <div>
