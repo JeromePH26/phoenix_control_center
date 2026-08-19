@@ -202,3 +202,144 @@ export interface SettlementJob {
   completedAt?: string | null;
   [key: string]: unknown;
 }
+
+// --- Model Lab (legacy PHOENIX_ADMIN_TOKEN auth, /api/admin/model-lab/*) ---
+// Raw DB column names throughout, same reasoning as the Football domain's
+// /matches/settle/* group and Jobs/API-Usage: this API predates the Control
+// Center and its _jsonSafe helper doesn't rename keys.
+
+export type ModelStatus = "champion" | "challenger" | "retired" | string;
+
+export interface ModelVersion {
+  id: number;
+  readable_version: string;
+  parent_model_id?: number | null;
+  generation?: number | null;
+  league_id?: string | null;
+  market: string;
+  model_type?: string | null;
+  training_count?: number | null;
+  validation_count?: number | null;
+  holdout_count?: number | null;
+  shadow_count?: number | null;
+  created_at?: string | null;
+  status: ModelStatus;
+  champion_since?: string | null;
+  last_promotion_at?: string | null;
+  config_hash?: string | null;
+  code_schema_version?: string | null;
+  evaluation_summary?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
+export interface ModelEvaluation {
+  id: number;
+  model_version_id: number;
+  compared_against_model_id?: number | null;
+  league_id?: string | null;
+  market: string;
+  evaluation_type: string;
+  match_scope?: string | null;
+  sample_size?: number | null;
+  brier_score?: number | null;
+  log_loss?: number | null;
+  accuracy?: number | null;
+  roi?: number | null;
+  created_at?: string | null;
+  [key: string]: unknown;
+}
+
+export type ModelVersionDetail = ModelVersion & { evaluations: ModelEvaluation[] };
+
+export interface ModelLabOverview {
+  learningSystem?: string;
+  promotionEnabled: boolean;
+  generativeAi?: string;
+  whitelistLeagues?: number;
+  activeChampions?: number;
+  activeChallengers?: number;
+  shadowPredictions?: number;
+  learningEligibleMatches?: number;
+  lastLearningRun?: Record<string, unknown> | null;
+  nextLearningRunBerlin?: string | null;
+  nextChampionReviewBerlin?: string | null;
+  [key: string]: unknown;
+}
+
+export interface LearningRun {
+  id: number;
+  started_at?: string | null;
+  completed_at?: string | null;
+  status: string;
+  trigger_type?: string | null;
+  current_step?: string | null;
+  leagues_processed?: number | null;
+  markets_processed?: number | null;
+  eligible_matches?: number | null;
+  excluded_matches?: number | null;
+  exclusions_by_reason?: Record<string, unknown> | null;
+  challengers_created?: number | null;
+  errors?: unknown[] | null;
+  summary?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
+export interface ShadowPrediction {
+  id: number;
+  model_version_id: number;
+  fixture_id: string;
+  league_id: string;
+  market: string;
+  settled: boolean;
+  outcome_index?: number | null;
+  brier_score?: number | null;
+  log_loss?: number | null;
+  settled_at?: string | null;
+  created_at?: string | null;
+  [key: string]: unknown;
+}
+
+export interface MonthlyReview {
+  id: number;
+  review_year: number;
+  review_month: number;
+  league_id?: string | null;
+  market: string;
+  champion_model_id?: number | null;
+  challenger_model_id?: number | null;
+  same_match_sample?: number | null;
+  recommendation: string;
+  reason?: string | null;
+  reviewed_at?: string | null;
+  status?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ModelLabLeagueMarket {
+  market: string;
+  sampleSize?: number | null;
+  status: string;
+  champion?: { id: number; readableVersion: string } | null;
+  bestChallenger?: { id: number; readableVersion: string } | null;
+  challengerCount?: number | null;
+  [key: string]: unknown;
+}
+
+export interface EligibilityAudit {
+  totalStoredSnapshots: number;
+  eligible: number;
+  notEligible: number;
+  exclusionsByReason: Record<string, number>;
+  perLeague: { leagueId: string; storedSnapshots: number; whitelisted: number; settled: number; eligible: number }[];
+}
+
+export interface ModelLabLeague {
+  leagueId: string;
+  leagueName?: string | null;
+  country?: string | null;
+  storedMatches?: number | null;
+  settledMatches?: number | null;
+  eligibleMatches?: number | null;
+  markets: ModelLabLeagueMarket[];
+  [key: string]: unknown;
+}

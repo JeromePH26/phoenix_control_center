@@ -1,0 +1,203 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import DataTable, { Column } from "@/components/ui/DataTable";
+import JsonViewer from "@/components/ui/JsonViewer";
+import KeyValueList from "@/components/ui/KeyValueList";
+import StateMessage from "@/components/ui/StateMessage";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import type { ModelEvaluation, ModelLabOverview, ModelVersionDetail } from "@/lib/types";
+
+type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
+
+function fmt(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "–";
+  return String(value);
+}
+
+export default function ModelDetailClient({ id }: { id: string }) {
+  const [model, setModel] = useState<ModelVersionDetail | null>(null);
+  const [overview, setOverview] = useState<ModelLabOverview | null>(null);
+  const [state, setState] = useState<LoadState>("loading");
+  const [action, setAction] = useState<"promote" | "rollback" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setState("loading");
+    try {
+      const [modelRes, overviewRes] = await Promise.all([
+        fetch(`/api/model-lab/models/${encodeURIComponent(id)}`),
+        fetch("/api/model-lab/overview"),
+      ]);
+      if (modelRes.status === 404) {
+        setState("notfound");
+        return;
+      }
+      if (modelRes.status === 502) {
+        setState("unreachable");
+        return;
+      }
+      if (!modelRes.ok) {
+        setState("error");
+        return;
+      }
+      const data = await modelRes.json().catch(() => null);
+      setModel(data);
+      if (overviewRes.ok) {
+        setOverview(await overviewRes.json().catch(() => null));
+      }
+      setState("loaded");
+    } catch {
+      setState("unreachable");
+    }
+  }, [id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleConfirm() {
+    if (!action) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/model-lab/models/${encodeURIComponent(id)}/${action}`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? `Fehler (Status ${res.status}).`);
+        return;
+      }
+      setAction(null);
+      load();
+    } catch {
+      setError("Verbindung zum Backend fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const evaluationColumns: Column<ModelEvaluation>[] = [
+    { header: "Typ", cell: (e) => <Badge tone="neutral">{e.evaluation_type}</Badge> },
+    { header: "Scope", cell: (e) => fmt(e.match_scope) },
+    { header: "Liga", cell: (e) => fmt(e.league_id ?? "GLOBAL") },
+    { header: "Sample", cell: (e) => fmt(e.sample_size) },
+    { header: "Brier", cell: (e) => fmt(e.brier_score) },
+    { header: "Log Loss", cell: (e) => fmt(e.log_loss) },
+    { header: "Accuracy", cell: (e) => fmt(e.accuracy) },
+    { header: "ROI", cell: (e) => fmt(e.roi) },
+    { header: "Erstellt", cell: (e) => fmt(e.created_at) },
+  ];
+
+  const promotionEnabled = overview?.promotionEnabled ?? false;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-neutral-900">Modell-Details</h1>
+      </div>
+
+      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "notfound" && <StateMessage title="Modell nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
+      {state === "unreachable" && (
+        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+      )}
+      {state === "error" && (
+        <StateMessage title="Modell konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+      )}
+
+      {state === "loaded" && model && (
+        <>
+          <Card title={model.readable_version} action={<Badge tone={model.status === "champion" ? "gold" : "neutral"}>{model.status}</Badge>}>
+            <KeyValueList
+              data={{
+                Liga: model.league_id ?? "GLOBAL",
+                Markt: model.market,
+                Generation: model.generation,
+                "Übergeordnetes Modell": model.parent_model_id,
+                "Training-Samples": model.training_count,
+                "Validation-Samples": model.validation_count,
+                "Holdout-Samples": model.holdout_count,
+                "Shadow-Samples": model.shadow_count,
+                "Champion seit": model.champion_since,
+                "Letzte Promotion": model.last_promotion_at,
+                "Vorheriger Champion": model.previous_champion_id,
+                "Config-Hash": model.config_hash,
+                "Schema-Version": model.code_schema_version,
+                Erstellt: model.created_at,
+              }}
+            />
+          </Card>
+
+          {!promotionEnabled && (
+            <StateMessage
+              title="Promotion ist deaktiviert"
+              description="PHOENIX_MODEL_PROMOTION_ENABLED=false — Champion-Wechsel sind serverseitig blockiert, unabhängig von dieser Ansicht."
+            />
+          )}
+
+          <Card title="Aktionen" action={<span className="text-xs text-neutral-400">Danger Zone</span>}>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="primary"
+                disabled={model.status === "champion"}
+                onClick={() => {
+                  setAction("promote");
+                  setError(null);
+                }}
+              >
+                Zum Champion befördern
+              </Button>
+              <Button
+                variant="danger"
+                disabled={model.status !== "champion"}
+                onClick={() => {
+                  setAction("rollback");
+                  setError(null);
+                }}
+              >
+                Rollback auf dieses Modell
+              </Button>
+            </div>
+          </Card>
+
+          <Card title="Weights & Feature-Config">
+            <div className="flex gap-4">
+              <JsonViewer value={model.weights} label="Weights" />
+              <JsonViewer value={model.feature_config} label="Feature-Config" />
+              <JsonViewer value={model.evaluation_summary} label="Evaluation-Summary" />
+            </div>
+          </Card>
+
+          <Card title="Evaluationen">
+            <DataTable
+              columns={evaluationColumns}
+              rows={model.evaluations ?? []}
+              rowKey={(e) => String(e.id)}
+              emptyMessage="Keine Evaluationen vorhanden"
+            />
+          </Card>
+        </>
+      )}
+
+      {action && (
+        <ConfirmDialog
+          title={action === "promote" ? "Zum Champion befördern" : "Rollback durchführen"}
+          description={
+            action === "promote"
+              ? `"${model?.readable_version}" wird neuer Champion für ${model?.league_id ?? "GLOBAL"} × ${model?.market}. Der bisherige Champion wird abgelöst.`
+              : `Champion für ${model?.league_id ?? "GLOBAL"} × ${model?.market} wird auf "${model?.readable_version}" zurückgesetzt.`
+          }
+          confirmLabel="Bestätigen"
+          busy={busy}
+          error={error}
+          onConfirm={handleConfirm}
+          onClose={() => setAction(null)}
+        />
+      )}
+    </div>
+  );
+}
