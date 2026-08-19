@@ -146,18 +146,20 @@ backend code path — this is server-side config storage only, ready to be consu
 
 ## Module enforcement (Section 40)
 
-`module_control` table, seeded with 6 modules. Each row has `enforced_in_backend`:
-whether disabling it actually stops backend work, or is (honestly) just a stored
-preference with no enforcement yet.
+`module_control` table, seeded with 6 modules, **all 6 now enforced**. Each row has
+`enforced_in_backend`: whether disabling it actually stops backend work, or is
+(honestly) just a stored preference with no enforcement — currently always `TRUE`,
+kept as a column rather than removed so a future module can be added un-enforced
+without lying about it.
 
-| Module | Enforced | What disabling it does |
-|---|---|---|
-| `phoenix_live` | ✅ | Stops `FootballFavoriteLiveMonitor.runOnce()` — the only continuous polling loop in the backend (5s interval, real API-Football cost) |
-| `settlement` | ✅ | `POST /api/admin/football/settle` and `/matches/settle` return 503 |
-| `model_lab_learning` | ✅ | `POST /api/admin/model-lab/learning-runs/start` returns 503 |
-| `historical_twins` | ❌ | not yet wired |
-| `news` | ❌ | not yet wired |
-| `advertising` | ❌ | not yet wired |
+| Module | What disabling it does |
+|---|---|
+| `phoenix_live` | Stops `FootballFavoriteLiveMonitor.runOnce()` — the only continuous polling loop in the backend (5s interval, real API-Football cost) |
+| `settlement` | `POST /api/admin/football/settle` and `/matches/settle` return 503 |
+| `model_lab_learning` | `POST /api/admin/model-lab/learning-runs/start` returns 503 |
+| `historical_twins` | `GET /api/football/historical-twins/<id>` returns 503 |
+| `news` | `GET /api/news/phoenix` (the manual CMS feed only, not the pre-existing imported `/api/news`) returns an empty list |
+| `advertising` | `GET /api/ads/<slot>` returns an empty campaign list for every slot |
 
 Check `database.moduleEnabled('<key>')` before adding new enforcement points; never
 mark a module `enforced_in_backend = TRUE` without an actual corresponding check

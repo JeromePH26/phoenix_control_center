@@ -73,7 +73,7 @@ is wired.
 | Item | Status |
 |---|---|
 | App Control → App Status | DONE |
-| App Control → Module | PARTIAL — 3 of 6 modules (`phoenix_live`, `settlement`, `model_lab_learning`) have real backend enforcement; the other 3 (`historical_twins`, `news`, `advertising`) are stored-but-unenforced, honestly labeled as such in the UI |
+| App Control → Module | DONE — all 6 modules have real backend enforcement (`phoenix_live`, `settlement`, `model_lab_learning`, `historical_twins`, `news`, `advertising`) |
 | App Control → Feature Flags / Rollouts / Staging | DONE (one model covers all three) — not yet read by `phoenixflt` |
 | App Control → Mindestversion (Release Center) | DONE — no real "users per version" stat possible, no app-version telemetry exists anywhere |
 | Infrastructure → API Usage, Jobs | DONE |
