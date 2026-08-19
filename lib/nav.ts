@@ -79,8 +79,8 @@ export const NAV_TREE: NavGroup[] = [
     label: "Communication",
     enabled: false,
     children: [
-      { label: "E-Mail", enabled: false },
-      { label: "Push", enabled: false },
+      { label: "E-Mail", href: "/communication/email", enabled: true },
+      { label: "Push", href: "/communication/push", enabled: true },
       { label: "Systemmeldungen", enabled: false },
     ],
   },
@@ -88,18 +88,18 @@ export const NAV_TREE: NavGroup[] = [
     label: "Content",
     enabled: false,
     children: [
-      { label: "News", enabled: false },
-      { label: "Hilfe/FAQ", enabled: false },
+      { label: "News", href: "/content/news", enabled: true },
+      { label: "Hilfe/FAQ", href: "/content/faq", enabled: true },
     ],
   },
   {
     label: "Advertising",
     enabled: false,
     children: [
-      { label: "Kampagnen", enabled: false },
-      { label: "Werbeflächen", enabled: false },
+      { label: "Kampagnen", href: "/advertising/campaigns", enabled: true },
+      { label: "Werbeflächen", href: "/advertising/slots", enabled: true },
       { label: "Assets", enabled: false },
-      { label: "Statistiken", enabled: false },
+      { label: "Statistiken", href: "/advertising/stats", enabled: true },
     ],
   },
   {
@@ -108,7 +108,7 @@ export const NAV_TREE: NavGroup[] = [
     children: [
       { label: "Google Play", enabled: false },
       { label: "Entitlements", enabled: false },
-      { label: "Feature Matrix", enabled: false },
+      { label: "Feature Matrix", href: "/premium/feature-matrix", enabled: true },
       { label: "Aktionen", enabled: false },
       { label: "Manuelle Premiumrechte", enabled: false },
     ],

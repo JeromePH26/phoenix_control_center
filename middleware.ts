@@ -27,5 +27,9 @@ export const config = {
     "/model-lab/:path*",
     "/users/:path*",
     "/support/:path*",
+    "/content/:path*",
+    "/advertising/:path*",
+    "/communication/:path*",
+    "/premium/:path*",
   ],
 };

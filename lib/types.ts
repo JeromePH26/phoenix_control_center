@@ -403,3 +403,89 @@ export interface SupportTicketMessage {
   created_at?: string | null;
   [key: string]: unknown;
 }
+
+// --- Phase 5: News CMS, FAQ, Advertising, Push Center, Premium Matrix ---
+// Raw DB column names throughout, same reasoning as the other
+// control-center session-auth endpoints added in Phase 2/4.
+
+export type EditorialStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "HIDDEN" | "ARCHIVED";
+
+export interface EditorialArticle {
+  id: number;
+  title: string;
+  summary?: string | null;
+  body?: string | null;
+  category: string;
+  image_url?: string | null;
+  author_employee_id?: number | null;
+  status: EditorialStatus | string;
+  homepage_feature: boolean;
+  breaking: boolean;
+  send_push: boolean;
+  push_sent_at?: string | null;
+  scheduled_at?: string | null;
+  published_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+export type FaqStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export interface FaqArticle {
+  id: number;
+  title: string;
+  body?: string | null;
+  category: string;
+  position: number;
+  status: FaqStatus | string;
+  author_employee_id?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+export type AdSlot = "home_banner" | "match_detail_infeed" | "news_infeed";
+export type AdAudience = "ALL" | "FREE" | "PREMIUM";
+
+export interface AdCampaign {
+  id: number;
+  name: string;
+  slot: AdSlot | string;
+  image_url: string;
+  link_url: string;
+  active: boolean;
+  start_date?: string | null;
+  end_date?: string | null;
+  target_country?: string | null;
+  target_audience: AdAudience | string;
+  impressions: number;
+  clicks: number;
+  created_by_employee_id?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+export interface PushBroadcast {
+  id: number;
+  title: string;
+  body: string;
+  target_type: "all" | "league" | string;
+  target_value?: string | null;
+  sent_count: number;
+  failed_count: number;
+  sent_by_employee_id?: number | null;
+  created_at?: string | null;
+  [key: string]: unknown;
+}
+
+export type PremiumTier = "FREE" | "PREMIUM" | "DISABLED";
+
+export interface PremiumFeature {
+  feature_key: string;
+  feature_label: string;
+  tier: PremiumTier | string;
+  updated_at?: string | null;
+  updated_by?: string | null;
+}
