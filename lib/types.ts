@@ -343,3 +343,63 @@ export interface ModelLabLeague {
   markets: ModelLabLeagueMarket[];
   [key: string]: unknown;
 }
+
+// --- Phase 4: Devices & Support (installation-based, no PHÖNIX user
+// accounts exist yet - see lib/src/database/database.dart _migrateSupport
+// on the backend). Raw DB column names throughout (control-center session
+// auth, but these rows come straight from PhoenixDatabase without a
+// camelCase rename step, same reasoning as Jobs/API-Usage/App-Control).
+
+export interface PushDevice {
+  installation_id: string;
+  platform: string;
+  locale?: string | null;
+  enabled: boolean;
+  news_enabled: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_seen_at?: string | null;
+  favorite_count?: number | null;
+  ticket_count?: number | null;
+  [key: string]: unknown;
+}
+
+export type TicketStatus = "NEU" | "IN_BEARBEITUNG" | "WARTET_AUF_NUTZER" | "GELOEST" | "GESCHLOSSEN";
+export type TicketCategory = "frage" | "bug" | "premium" | "match" | "sonstiges";
+export type TicketPriority = "niedrig" | "normal" | "hoch" | "dringend";
+
+export interface SupportTicket {
+  id: number;
+  installation_id: string;
+  category: TicketCategory | string;
+  subject: string;
+  message: string;
+  status: TicketStatus | string;
+  priority: TicketPriority | string;
+  assigned_employee_id?: number | null;
+  app_version?: string | null;
+  platform?: string | null;
+  os_version?: string | null;
+  device_model?: string | null;
+  match_id?: string | null;
+  screen?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
+export interface AssignableEmployee {
+  id: number;
+  name: string;
+}
+
+export interface SupportTicketMessage {
+  id: number;
+  ticket_id: number;
+  author_type: "user" | "employee";
+  employee_id?: number | null;
+  message: string;
+  internal_note: boolean;
+  created_at?: string | null;
+  [key: string]: unknown;
+}

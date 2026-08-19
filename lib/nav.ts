@@ -58,7 +58,7 @@ export const NAV_TREE: NavGroup[] = [
     label: "Users",
     enabled: false,
     children: [
-      { label: "Nutzer", enabled: false },
+      { label: "Geräte", href: "/users/devices", enabled: true },
       { label: "Premiumstatus", enabled: false },
       { label: "Sessions", enabled: false },
       { label: "Sperren", enabled: false },
@@ -69,10 +69,10 @@ export const NAV_TREE: NavGroup[] = [
     label: "Support",
     enabled: false,
     children: [
-      { label: "Tickets", enabled: false },
-      { label: "Bugs", enabled: false },
-      { label: "Premiumfälle", enabled: false },
-      { label: "Nutzerfragen", enabled: false },
+      { label: "Tickets", href: "/support/tickets", enabled: true },
+      { label: "Bugs", href: "/support/tickets?category=bug", enabled: true },
+      { label: "Premiumfälle", href: "/support/tickets?category=premium", enabled: true },
+      { label: "Nutzerfragen", href: "/support/tickets?category=frage", enabled: true },
     ],
   },
   {

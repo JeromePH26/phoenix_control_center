@@ -25,5 +25,7 @@ export const config = {
     "/infrastructure/:path*",
     "/app-control/:path*",
     "/model-lab/:path*",
+    "/users/:path*",
+    "/support/:path*",
   ],
 };
