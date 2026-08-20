@@ -28,7 +28,44 @@ function statusTone(status: string | undefined): "green" | "red" | "neutral" {
   return "neutral";
 }
 
-const KNOWN_KEYS = new Set(["leagueId", "name", "manualStatus"]);
+const KNOWN_KEYS = new Set([
+  "leagueId",
+  "name",
+  "manualStatus",
+  "league_id",
+  "league_name",
+  "manual_status",
+  "country",
+  "competition_level",
+  "total_samples",
+  "successful_full_analyses",
+  "historical_status",
+  "last_seen_at",
+  "seasons",
+  "gender",
+]);
+
+const HISTORICAL_STATUS_LABEL: Record<string, string> = {
+  active: "Aktiv",
+  inactive: "Inaktiv",
+  archived: "Archiviert",
+};
+
+function levelLabel(level: unknown): string {
+  const n = typeof level === "number" ? level : null;
+  if (n === 1) return "1. Liga (Top)";
+  if (n === 2) return "2. Liga";
+  if (n === 3) return "3. Liga";
+  if (n == null) return "Pokal / International";
+  return `Stufe ${n}`;
+}
+
+function formatLastSeen(value: unknown): string {
+  if (typeof value !== "string" || !value) return "–";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "–";
+  return date.toLocaleDateString("de-DE");
+}
 
 export default function FootballLeaguesClient() {
   const router = useRouter();
@@ -97,7 +134,8 @@ export default function FootballLeaguesClient() {
 
   const columns: Column<FootballLeague>[] = [
     { header: "Liga", cell: (l) => <span className="font-medium text-neutral-900">{l.name ?? l.leagueId}</span> },
-    { header: "Liga-ID", cell: (l) => l.leagueId },
+    { header: "Land", cell: (l) => (typeof l.country === "string" ? l.country : "–") },
+    { header: "Stufe", cell: (l) => levelLabel(l.competition_level) },
     {
       header: "Status",
       info: "Auto = System entscheidet automatisch. Whitelist = manuell freigegeben, wird sicher angezeigt. Blacklist = manuell gesperrt, wird nie angezeigt.",
@@ -111,10 +149,20 @@ export default function FootballLeaguesClient() {
       },
     },
     {
-      header: "Details",
+      header: "Historie",
+      info: "Ob PHÖNIX diese Liga aktuell noch aktiv beobachtet oder nur noch historische Daten dazu vorliegen.",
+      cell: (l) => {
+        const status = typeof l.historical_status === "string" ? l.historical_status : undefined;
+        return status ? (HISTORICAL_STATUS_LABEL[status] ?? status) : "–";
+      },
+    },
+    { header: "Analysierte Samples", cell: (l) => (typeof l.total_samples === "number" ? l.total_samples : "0") },
+    { header: "Zuletzt gesehen", cell: (l) => formatLastSeen(l.last_seen_at) },
+    {
+      header: "Technische Details",
       cell: (l) => {
         const extra = Object.fromEntries(Object.entries(l).filter(([k]) => !KNOWN_KEYS.has(k)));
-        return Object.keys(extra).length > 0 ? <JsonViewer value={extra} label="Details" /> : "–";
+        return Object.keys(extra).length > 0 ? <JsonViewer value={extra} label="Technische Details" /> : "–";
       },
     },
     {

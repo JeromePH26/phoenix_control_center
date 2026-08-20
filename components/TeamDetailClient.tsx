@@ -10,6 +10,7 @@ import StateMessage from "@/components/ui/StateMessage";
 import Badge from "@/components/ui/Badge";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
+import DataCoveragePanel from "@/components/DataCoveragePanel";
 import type { FootballAsset, FootballTeamProfile, FootballTip } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -144,6 +145,17 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
             }
           >
             <EntityPerformancePanel teamId={teamId} />
+          </Card>
+
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Daten
+                <InfoTooltip text="Was hat PHÖNIX tatsächlich über dieses Team gespeichert - je Datenkategorie über alle gescannten Spiele." />
+              </span>
+            }
+          >
+            <DataCoveragePanel teamId={teamId} />
           </Card>
 
           <Card title="Alle Analysen">

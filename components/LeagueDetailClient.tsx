@@ -7,11 +7,12 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
-import KeyValueList from "@/components/ui/KeyValueList";
+import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
+import DataCoveragePanel from "@/components/DataCoveragePanel";
 import type { FootballAsset, FootballLeague, FootballTip, LeagueManualStatus } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -22,6 +23,23 @@ function statusTone(status: string | undefined): "green" | "red" | "neutral" {
   if (status === "whitelist") return "green";
   if (status === "blacklist") return "red";
   return "neutral";
+}
+
+const HISTORICAL_STATUS_LABEL: Record<string, string> = { active: "Aktiv", inactive: "Inaktiv", archived: "Archiviert" };
+const GENDER_LABEL: Record<string, string> = { male: "Herren", female: "Damen" };
+const LEAGUE_KNOWN_KEYS = new Set([
+  "leagueId", "name", "manualStatus", "league_id", "league_name", "manual_status",
+  "country", "gender", "competition_level", "total_samples", "successful_full_analyses",
+  "historical_status", "last_seen_at", "seasons",
+]);
+
+function levelLabel(level: unknown): string {
+  const n = typeof level === "number" ? level : null;
+  if (n === 1) return "1. Liga (Top)";
+  if (n === 2) return "2. Liga";
+  if (n === 3) return "3. Liga";
+  if (n == null) return "Pokal / International";
+  return `Stufe ${n}`;
 }
 
 const RESULT_LABEL: Record<string, string> = { pending: "Offen", won: "Gewonnen", lost: "Verloren", push: "Rückgabe" };
@@ -178,6 +196,38 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
                   </p>
                 </div>
                 <div>
+                  <p className="text-neutral-500">Land</p>
+                  <p className="font-medium text-neutral-900">{typeof league.country === "string" ? league.country : "–"}</p>
+                </div>
+                <div>
+                  <p className="text-neutral-500">Wettbewerbsstufe</p>
+                  <p className="font-medium text-neutral-900">{levelLabel(league.competition_level)}</p>
+                </div>
+                <div>
+                  <p className="text-neutral-500">Geschlecht</p>
+                  <p className="font-medium text-neutral-900">
+                    {typeof league.gender === "string" ? (GENDER_LABEL[league.gender] ?? league.gender) : "–"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-neutral-500">Historie</p>
+                  <p className="font-medium text-neutral-900">
+                    {typeof league.historical_status === "string"
+                      ? (HISTORICAL_STATUS_LABEL[league.historical_status] ?? league.historical_status)
+                      : "–"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-neutral-500">Analysierte Samples</p>
+                  <p className="font-medium text-neutral-900">
+                    {typeof league.total_samples === "number" ? league.total_samples : "0"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-neutral-500">Zuletzt gesehen</p>
+                  <p className="font-medium text-neutral-900">{formatDateTime(league.last_seen_at as string | null | undefined)}</p>
+                </div>
+                <div>
                   <p className="text-neutral-500">Liga-ID</p>
                   <p className="font-mono text-xs text-neutral-500">{league.leagueId}</p>
                 </div>
@@ -186,12 +236,11 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
                 Bild ersetzen
               </Button>
             </div>
-            {Object.keys(league).some((k) => !["leagueId", "name", "manualStatus"].includes(k)) && (
+            {Object.keys(league).some((k) => !LEAGUE_KNOWN_KEYS.has(k)) && (
               <div className="mt-3">
-                <KeyValueList
-                  data={Object.fromEntries(
-                    Object.entries(league).filter(([k]) => !["leagueId", "name", "manualStatus"].includes(k))
-                  )}
+                <JsonViewer
+                  label="Technische Details"
+                  value={Object.fromEntries(Object.entries(league).filter(([k]) => !LEAGUE_KNOWN_KEYS.has(k)))}
                 />
               </div>
             )}
@@ -206,6 +255,17 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
             }
           >
             <EntityPerformancePanel leagueId={leagueId} />
+          </Card>
+
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Daten
+                <InfoTooltip text="Was hat PHÖNIX tatsächlich über diese Liga gespeichert - je Datenkategorie über alle gescannten Spiele." />
+              </span>
+            }
+          >
+            <DataCoveragePanel leagueId={leagueId} />
           </Card>
 
           <Card title="Alle Analysen">

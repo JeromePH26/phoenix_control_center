@@ -2,12 +2,14 @@ import InfoTooltip from "./InfoTooltip";
 
 function formatValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "Keine Daten";
-  if (typeof value === "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return value.length === 0 ? "Keine Daten" : `${value.length} Einträge`;
+  if (typeof value === "object") return "Details vorhanden";
+  if (typeof value === "boolean") return value ? "Ja" : "Nein";
   return String(value);
 }
 
 function formatKey(key: string): string {
-  const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  const spaced = key.replace(/_/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 

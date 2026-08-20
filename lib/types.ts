@@ -835,3 +835,17 @@ export interface PerformanceAggregateResponse {
   byMarket?: PerformanceByMarket[];
   timeSeries?: PerformanceTimeSeriesPoint[];
 }
+
+export type DataCoverageStatus = "available" | "partial" | "missing" | "unknown";
+
+export interface DataCoverageCategory {
+  coveragePercent: number;
+  status: DataCoverageStatus;
+}
+
+export interface DataCoverageResponse {
+  sampleSize: number;
+  overallCoveragePercent: number | null;
+  lastUpdated: string | null;
+  categories: Record<string, DataCoverageCategory>;
+}
