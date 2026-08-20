@@ -87,7 +87,14 @@ export default function ModelsClient() {
     {
       header: "Training-Samples",
       info: "Anzahl vergangener Spiele, mit denen dieses Modell trainiert (angelernt) wurde. Mehr Spiele = in der Regel verlässlichere Vorhersagen.",
-      cell: (m) => fmt(m.training_count),
+      cell: (m) =>
+        (m.training_count ?? 0) === 0 && m.model_type === "global_baseline" ? (
+          <span className="text-neutral-400">
+            0 <span className="text-xs">(globale Basis, noch keine Liga hat genug Daten)</span>
+          </span>
+        ) : (
+          fmt(m.training_count)
+        ),
     },
     { header: "Erstellt", cell: (m) => fmt(m.created_at) },
   ];

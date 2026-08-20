@@ -164,6 +164,13 @@ export default function ModelDetailClient({ id }: { id: string }) {
             />
           </Card>
 
+          {(model.training_count ?? 0) === 0 && model.model_type === "global_baseline" && (
+            <StateMessage
+              title="Globales Basismodell – noch nicht liga-spezifisch trainiert"
+              description="Dieses Modell startet mit festen Standardwerten, bis für Liga × Markt genug abgeschlossene, ausgewertete Spiele vorliegen (siehe Learning-Bereich für den aktuellen Stand je Liga). Das ist normal für ein junges Learning-System, kein Fehler."
+            />
+          )}
+
           {!promotionEnabled && (
             <StateMessage
               title="Beförderung ist deaktiviert"
