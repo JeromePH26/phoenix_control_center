@@ -849,3 +849,45 @@ export interface DataCoverageResponse {
   lastUpdated: string | null;
   categories: Record<string, DataCoverageCategory>;
 }
+
+export type LeagueMarketStatus =
+  | "NOT_ENOUGH_DATA"
+  | "GLOBAL_ONLY"
+  | "LEAGUE_ADAPTATION"
+  | "CHALLENGER_READY"
+  | "SHADOW_ACTIVE"
+  | "CHAMPION_ACTIVE";
+
+export const LEAGUE_MARKET_STATUS_LABEL: Record<LeagueMarketStatus, string> = {
+  NOT_ENOUGH_DATA: "Zu wenig Daten",
+  GLOBAL_ONLY: "Nur globales Modell",
+  LEAGUE_ADAPTATION: "Liga-Anpassung möglich",
+  CHALLENGER_READY: "Herausforderer bereit",
+  SHADOW_ACTIVE: "Shadow-Test aktiv",
+  CHAMPION_ACTIVE: "Liga-Champion aktiv",
+};
+
+export interface LeagueMarketModelRef {
+  id: number;
+  readableVersion: string;
+}
+
+export interface LeagueLearningMarket {
+  market: string;
+  marketLabel: string;
+  sampleSize: number;
+  status: LeagueMarketStatus | string;
+  champion: LeagueMarketModelRef | null;
+  bestChallenger: LeagueMarketModelRef | null;
+  challengerCount: number;
+}
+
+export interface LeagueLearningOverview {
+  leagueId: string;
+  leagueName: string | null;
+  country: string | null;
+  storedMatches: number;
+  settledMatches: number;
+  eligibleMatches: number;
+  markets: LeagueLearningMarket[];
+}

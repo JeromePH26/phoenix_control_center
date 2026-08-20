@@ -13,6 +13,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
 import DataCoveragePanel from "@/components/DataCoveragePanel";
+import LeagueLearningPanel from "@/components/LeagueLearningPanel";
 import type { FootballAsset, FootballLeague, FootballTip, LeagueManualStatus } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -266,6 +267,17 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
             }
           >
             <DataCoveragePanel leagueId={leagueId} />
+          </Card>
+
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Learning
+                <InfoTooltip text="Champion/Herausforderer-Status je Markt aus dem Model Lab - rein informativ, ein Wechsel wird nie von hier aus ausgelöst." />
+              </span>
+            }
+          >
+            <LeagueLearningPanel leagueId={leagueId} />
           </Card>
 
           <Card title="Alle Analysen">
