@@ -665,3 +665,98 @@ export interface SystemAuditRun {
   report_text: string;
   generated_at?: string | null;
 }
+
+/** PHÖNIX Account System - row shape from GET /api/admin/control-center/users (raw SQL column names; UI translates, never shows them raw). */
+export interface PhoenixUser {
+  id: number;
+  phoenix_user_id: string;
+  account_type: "USER" | "EMPLOYEE" | "OWNER" | string;
+  email: string;
+  email_verified: boolean;
+  username?: string | null;
+  display_name?: string | null;
+  account_status:
+    | "PENDING_EMAIL_VERIFICATION"
+    | "ACTIVE"
+    | "SUSPENDED"
+    | "PERMANENTLY_SUSPENDED"
+    | "DELETION_PENDING"
+    | "DELETED"
+    | string;
+  created_at: string;
+  last_active_at?: string | null;
+  has_premium?: boolean;
+  has_active_ban?: boolean;
+  [key: string]: unknown;
+}
+
+export interface PhoenixUserListResponse {
+  users: PhoenixUser[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface PhoenixUserSession {
+  token: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at?: string | null;
+  ip?: string | null;
+  user_agent?: string | null;
+  device_model?: string | null;
+  platform?: string | null;
+  app_version?: string | null;
+}
+
+export interface PhoenixUserPremiumEntitlement {
+  id: number;
+  source: "GOOGLE_PLAY" | "WEBSITE" | "MANUAL" | "PROMOTION" | "STAFF" | "PARTNER" | string;
+  active: boolean;
+  tier?: string | null;
+  starts_at: string;
+  expires_at?: string | null;
+  auto_renew: boolean;
+  cancelled_at?: string | null;
+  provider_product_id?: string | null;
+  reason?: string | null;
+  created_at: string;
+  granted_by_employee_id?: number | null;
+  granted_by_name?: string | null;
+}
+
+export interface PhoenixUserBan {
+  id: number;
+  case_number: string;
+  status: "ACTIVE" | "LIFTED" | "EXPIRED" | string;
+  reason: string;
+  internal_report: string;
+  duration_type: "1_HOUR" | "24_HOURS" | "7_DAYS" | "30_DAYS" | "CUSTOM" | "PERMANENT" | string;
+  expires_at?: string | null;
+  refund_decision?: string | null;
+  refund_reason?: string | null;
+  support_ticket_id?: number | null;
+  created_at: string;
+  created_by_name?: string | null;
+  lifted_at?: string | null;
+  lifted_by_name?: string | null;
+  lift_reason?: string | null;
+}
+
+export interface PhoenixUserSupportTicketRef {
+  id: number;
+  category: string;
+  priority: string;
+  status: string;
+  subject: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PhoenixUserDetailResponse {
+  user: PhoenixUser;
+  sessions: PhoenixUserSession[];
+  premiumEntitlements: PhoenixUserPremiumEntitlement[];
+  bans: PhoenixUserBan[];
+  supportTickets: PhoenixUserSupportTicketRef[];
+}

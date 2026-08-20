@@ -56,13 +56,10 @@ export const NAV_TREE: NavGroup[] = [
   },
   {
     label: "Users",
-    enabled: false,
+    enabled: true,
     children: [
+      { label: "Nutzerkonten", href: "/users/accounts", enabled: true },
       { label: "Geräte", href: "/users/devices", enabled: true },
-      { label: "Premiumstatus", enabled: false },
-      { label: "Sessions", enabled: false },
-      { label: "Sperren", enabled: false },
-      { label: "Supportbezug", enabled: false },
     ],
   },
   {
