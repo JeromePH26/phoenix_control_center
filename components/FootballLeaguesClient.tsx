@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Badge from "@/components/ui/Badge";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
@@ -191,6 +192,7 @@ export default function FootballLeaguesClient() {
   return (
     <div className="space-y-6">
       <div>
+        <Breadcrumbs items={[{ label: "Ligen" }]} />
         <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
           Ligen / Whitelist
           <InfoTooltip text="Whitelist = Liste erlaubter/freigegebener Ligen. Hier legst du fest, welche Ligen in der App sicher angezeigt werden dürfen." />

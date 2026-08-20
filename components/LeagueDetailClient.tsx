@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
@@ -142,9 +142,13 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/football/leagues" className="text-xs text-neutral-400 hover:text-neutral-600">
-          ← Zurück zu Ligen
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: "Ligen", href: "/football/leagues" },
+            ...(league?.country ? [{ label: String(league.country) }] : []),
+            { label: league?.name ?? leagueId },
+          ]}
+        />
         <h1 className="mt-1 text-xl font-semibold text-neutral-900">{league?.name ?? "Liga"}</h1>
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
@@ -91,9 +91,15 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/football/teams" className="text-xs text-neutral-400 hover:text-neutral-600">
-          ← Zurück zu Teams
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: "Teams", href: "/football/teams" },
+            ...(team?.league_name
+              ? [{ label: team.league_name, href: team.league_id ? `/football/leagues/${encodeURIComponent(team.league_id)}` : undefined }]
+              : []),
+            { label: team?.name ?? teamId },
+          ]}
+        />
         <h1 className="mt-1 text-xl font-semibold text-neutral-900">{team?.name ?? "Team"}</h1>
       </div>
 

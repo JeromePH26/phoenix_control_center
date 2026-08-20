@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
@@ -76,6 +77,7 @@ export default function FootballTeamsClient() {
   return (
     <div className="space-y-6">
       <div>
+        <Breadcrumbs items={[{ label: "Teams" }]} />
         <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
           Teams
           <InfoTooltip text="Alle Fußball-Mannschaften, die in gespeicherten Spielen vorkommen. Klick auf ein Team für Analysen, Performance und Wappen." />
