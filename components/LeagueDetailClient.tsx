@@ -14,7 +14,8 @@ import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
 import DataCoveragePanel from "@/components/DataCoveragePanel";
 import LeagueLearningPanel from "@/components/LeagueLearningPanel";
-import type { FootballAsset, FootballLeague, FootballTip, LeagueManualStatus } from "@/lib/types";
+import LeagueTeamsPanel from "@/components/LeagueTeamsPanel";
+import type { FootballAsset, FootballLeague, FootballTip, LeagueManualStatus, LeagueTeamRow } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
 
@@ -60,6 +61,7 @@ function formatDateTime(iso: string | null | undefined): string {
 export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
   const [league, setLeague] = useState<FootballLeague | null>(null);
   const [tips, setTips] = useState<FootballTip[]>([]);
+  const [teams, setTeams] = useState<LeagueTeamRow[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [showUpload, setShowUpload] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
@@ -70,9 +72,10 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
   const load = useCallback(async () => {
     setState("loading");
     try {
-      const [leaguesRes, tipsRes] = await Promise.all([
+      const [leaguesRes, tipsRes, teamsRes] = await Promise.all([
         fetch("/api/football/leagues"),
         fetch(`/api/football/tips?leagueId=${encodeURIComponent(leagueId)}&limit=200`),
+        fetch(`/api/football/leagues/${encodeURIComponent(leagueId)}/teams`),
       ]);
       if (leaguesRes.status === 502) {
         setState("unreachable");
@@ -93,6 +96,10 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
       if (tipsRes.ok) {
         const data = await tipsRes.json().catch(() => null);
         setTips(Array.isArray(data?.tips) ? data.tips : []);
+      }
+      if (teamsRes.ok) {
+        const data = await teamsRes.json().catch(() => null);
+        setTeams(Array.isArray(data?.teams) ? data.teams : []);
       }
       setState("loaded");
     } catch {
@@ -282,6 +289,17 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
             }
           >
             <LeagueLearningPanel leagueId={leagueId} />
+          </Card>
+
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Teams ({teams.length})
+                <InfoTooltip text="Alle Teams dieser Liga mit gespeicherten Spielen, PHÖNIX-Analysen und Performance." />
+              </span>
+            }
+          >
+            <LeagueTeamsPanel teams={teams} />
           </Card>
 
           <Card title="Alle Analysen">

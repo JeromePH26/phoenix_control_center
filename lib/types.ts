@@ -882,6 +882,22 @@ export interface LeagueLearningMarket {
   challengerCount: number;
 }
 
+export interface LeagueTeamRow {
+  id: string;
+  name: string;
+  logo: string | null;
+  stored_matches: number;
+  analyzed_matches: number;
+  tips_count: number;
+  won: number;
+  lost: number;
+  staked_units: number;
+  profit_units: number;
+  avg_data_quality: number | null;
+  hitRatePercent: number | null;
+  roiPercent: number | null;
+}
+
 export interface LeagueLearningOverview {
   leagueId: string;
   leagueName: string | null;
