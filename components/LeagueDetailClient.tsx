@@ -9,6 +9,7 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
+import AssetGallery from "@/components/AssetGallery";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
@@ -188,18 +189,8 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
               </div>
             }
           >
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-neutral-100 bg-neutral-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imageSrc}
-                  alt={league.name}
-                  className="h-full w-full object-contain p-1"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
+            <div className="flex items-start gap-4">
+              <AssetGallery type="league" id={leagueId} imageSrc={imageSrc} entityName={league.name} onReplace={() => setShowUpload(true)} />
               <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
                 <div>
                   <p className="text-neutral-500">Status</p>
@@ -244,9 +235,6 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
                   <p className="font-mono text-xs text-neutral-500">{league.leagueId}</p>
                 </div>
               </div>
-              <Button variant="secondary" onClick={() => setShowUpload(true)}>
-                Bild ersetzen
-              </Button>
             </div>
             {Object.keys(league).some((k) => !LEAGUE_KNOWN_KEYS.has(k)) && (
               <div className="mt-3">

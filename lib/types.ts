@@ -239,6 +239,12 @@ export interface FootballAsset {
   [key: string]: unknown;
 }
 
+export interface FootballAssetHistoryItem {
+  id: number;
+  mime_type: string;
+  archived_at: string;
+}
+
 export type SettlementJobStatus = "running" | "completed" | "failed" | string;
 
 // --- Jobs / API Usage / App Control (control-center session auth) ---

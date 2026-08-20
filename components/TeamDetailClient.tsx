@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import Badge from "@/components/ui/Badge";
+import AssetGallery from "@/components/AssetGallery";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
 import DataCoveragePanel from "@/components/DataCoveragePanel";
@@ -113,15 +113,8 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
       {state === "loaded" && team && (
         <>
           <Card title="Übersicht">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-neutral-100 bg-neutral-50">
-                {imageSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imageSrc} alt={team.name} className="h-full w-full object-contain p-1" />
-                ) : (
-                  <span className="text-xs text-neutral-300">Kein Bild</span>
-                )}
-              </div>
+            <div className="flex items-start gap-4">
+              <AssetGallery type="team" id={teamId} imageSrc={imageSrc} entityName={team.name} onReplace={() => setShowUpload(true)} />
               <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
                 <div>
                   <p className="text-neutral-500">Land</p>
@@ -136,9 +129,6 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
                   <p className="font-mono text-xs text-neutral-500">{team.id}</p>
                 </div>
               </div>
-              <Button variant="secondary" onClick={() => setShowUpload(true)}>
-                Bild ersetzen
-              </Button>
             </div>
           </Card>
 
