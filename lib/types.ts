@@ -789,3 +789,49 @@ export interface PhoenixUserDetailResponse {
   bans: PhoenixUserBan[];
   supportTickets: PhoenixUserSupportTicketRef[];
 }
+
+/** GET /api/football/performance response shape - all numbers computed server-side over the full filtered dataset (never a paginated row subset). */
+export interface PerformanceSummary {
+  sampleSize: number;
+  withTip: number;
+  pending: number;
+  won: number;
+  lost: number;
+  push: number;
+  hitRatePercent: number | null;
+  stakedUnits: number;
+  profitUnits: number;
+  roiPercent: number | null;
+  yieldPercent: number | null;
+  avgOdds: number | null;
+  avgValuePercent: number | null;
+}
+
+export interface PerformanceByMarket {
+  marketKey: string;
+  marketLabel: string;
+  won: number;
+  lost: number;
+  push: number;
+  sampleSize: number;
+  hitRatePercent: number | null;
+  profitUnits: number;
+  roiPercent: number | null;
+  yieldPercent: number | null;
+  avgOdds: number | null;
+}
+
+export interface PerformanceTimeSeriesPoint {
+  period: string;
+  won: number;
+  lost: number;
+  hitRatePercent: number | null;
+  roiPercent: number | null;
+}
+
+export interface PerformanceAggregateResponse {
+  summary: PerformanceSummary;
+  previousPeriod?: PerformanceSummary;
+  byMarket?: PerformanceByMarket[];
+  timeSeries?: PerformanceTimeSeriesPoint[];
+}

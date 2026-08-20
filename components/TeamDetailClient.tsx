@@ -143,7 +143,7 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
               </span>
             }
           >
-            <EntityPerformancePanel tips={tips} />
+            <EntityPerformancePanel teamId={teamId} />
           </Card>
 
           <Card title="Alle Analysen">

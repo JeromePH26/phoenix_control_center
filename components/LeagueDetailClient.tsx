@@ -205,7 +205,7 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
               </span>
             }
           >
-            <EntityPerformancePanel tips={tips} />
+            <EntityPerformancePanel leagueId={leagueId} />
           </Card>
 
           <Card title="Alle Analysen">
