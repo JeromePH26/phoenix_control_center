@@ -155,6 +155,52 @@ export interface FootballLeague {
   [key: string]: unknown;
 }
 
+/** Row shape from GET /api/admin/football/tips - the backend returns the raw SQL column names (snake_case); this UI never shows those keys directly, only translated German labels built from them. */
+export interface FootballTip {
+  phase_two_scan_run_id: number;
+  fixture_id: string;
+  prediction_date?: string | null;
+  kickoff?: string | null;
+  model_version: string;
+  market_key: string;
+  market_label: string;
+  model_probability?: number | null;
+  fair_odds?: number | null;
+  market_odds?: number | null;
+  assigned_units?: number | null;
+  data_quality: number;
+  confidence: number;
+  result_status: "pending" | "won" | "lost" | "push" | string;
+  home_score?: number | null;
+  away_score?: number | null;
+  profit_units?: number | null;
+  settled_at?: string | null;
+  created_at?: string | null;
+  is_value_tip?: boolean | null;
+  value_percent?: number | null;
+  simulation_count?: number | null;
+  league_id?: string | null;
+  league_name?: string | null;
+  country?: string | null;
+  home_team_id?: string | null;
+  home_team_name?: string | null;
+  home_logo?: string | null;
+  away_team_id?: string | null;
+  away_team_name?: string | null;
+  away_logo?: string | null;
+  match_status?: string | null;
+  whitelist_status?: LeagueManualStatus | string | null;
+  [key: string]: unknown;
+}
+
+export interface FootballTipListResponse {
+  tips: FootballTip[];
+  total: number;
+  limit: number;
+  offset: number;
+  [key: string]: unknown;
+}
+
 export interface FootballAsset {
   type: string;
   id: string;

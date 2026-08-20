@@ -33,9 +33,9 @@ export const NAV_TREE: NavGroup[] = [
   },
   {
     label: "Tips",
-    enabled: false,
+    enabled: true,
     children: [
-      { label: "Empfehlungen", enabled: false },
+      { label: "Empfehlungen", href: "/football/tips", enabled: true },
       { label: "Ergebnisse", enabled: false },
       { label: "ROI", enabled: false },
       { label: "Marktanalyse", enabled: false },
