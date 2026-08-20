@@ -10,6 +10,7 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useLeagueNames } from "@/lib/useLeagueNames";
 import type { EligibilityAudit, LearningRun, ModelLabOverview } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -36,6 +37,16 @@ function fmt(value: unknown): string {
   return String(value);
 }
 
+function formatDateTime(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "–";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.toLocaleDateString("de-DE")} · ${date.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
+}
+
 export default function LearningClient() {
   const [overview, setOverview] = useState<ModelLabOverview | null>(null);
   const [audit, setAudit] = useState<EligibilityAudit | null>(null);
@@ -45,6 +56,7 @@ export default function LearningClient() {
   const [confirmStart, setConfirmStart] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { leagueName } = useLeagueNames();
 
   const load = useCallback(async () => {
     setState("loading");
@@ -100,14 +112,22 @@ export default function LearningClient() {
   const runColumns: Column<LearningRun>[] = [
     { header: "ID", cell: (r) => <span className="font-medium text-neutral-900">#{r.id}</span> },
     { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{runStatusLabel(r.status)}</Badge> },
-    { header: "Auslöser", cell: (r) => fmt(r.trigger_type) },
+    {
+      header: "Auslöser",
+      cell: (r) =>
+        r.trigger_type === "manual"
+          ? "Manuell gestartet"
+          : r.trigger_type === "scheduled"
+            ? "Automatisch nach Zeitplan"
+            : fmt(r.trigger_type),
+    },
     { header: "Ligen / Märkte", cell: (r) => `${fmt(r.leagues_processed)} / ${fmt(r.markets_processed)}` },
     { header: "Challenger erstellt", cell: (r) => fmt(r.challengers_created) },
-    { header: "Gestartet", cell: (r) => fmt(r.started_at) },
+    { header: "Gestartet", cell: (r) => formatDateTime(r.started_at) },
   ];
 
   const perLeagueColumns: Column<EligibilityAudit["perLeague"][number]>[] = [
-    { header: "Liga", cell: (l) => l.leagueId },
+    { header: "Liga", cell: (l) => leagueName(l.leagueId) },
     { header: "Gespeichert", info: "Anzahl der für diese Liga gespeicherten Spiel-Datensätze.", cell: (l) => l.storedSnapshots },
     { header: "Freigegeben", info: "Anzahl der Spiele in dieser Liga, die auf der Whitelist stehen (manuell freigegeben).", cell: (l) => l.whitelisted },
     { header: "Abgerechnet", info: "Anzahl der Spiele in dieser Liga, für die schon ein Endergebnis eingetragen wurde.", cell: (l) => l.settled },

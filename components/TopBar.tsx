@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import SearchBox from "@/components/SearchBox";
 import type { Employee } from "@/lib/types";
+import { roleLabel } from "@/lib/types";
 
 export default function TopBar({ employee }: { employee: Employee }) {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function TopBar({ employee }: { employee: Employee }) {
       <div className="flex shrink-0 items-center gap-3 border-l border-neutral-200 pl-4">
         <div className="text-right leading-tight">
           <p className="text-sm font-medium text-neutral-900">{employee.name}</p>
-          <p className="text-xs text-neutral-400">{employee.role}</p>
+          <p className="text-xs text-neutral-400">{roleLabel(employee.role)}</p>
         </div>
         <button
           type="button"

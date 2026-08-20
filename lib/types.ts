@@ -1,28 +1,34 @@
 export type EmployeeRole =
   | "OWNER"
+  | "VICE_OWNER"
   | "ADMIN"
   | "TECHNICAL"
   | "SUPPORT"
   | "CONTENT"
-  | "MARKETING";
+  | "MARKETING"
+  | "SECURITY";
 
 export const EMPLOYEE_ROLES: EmployeeRole[] = [
   "OWNER",
+  "VICE_OWNER",
   "ADMIN",
   "TECHNICAL",
   "SUPPORT",
   "CONTENT",
   "MARKETING",
+  "SECURITY",
 ];
 
 /** Plain-German display name for each role code, so the raw English constant never shows up in the UI directly. */
 export const ROLE_LABEL: Record<string, string> = {
   OWNER: "Inhaber",
+  VICE_OWNER: "Stellvertretender Inhaber",
   ADMIN: "Administrator",
   TECHNICAL: "Technik",
   SUPPORT: "Support",
   CONTENT: "Redaktion",
   MARKETING: "Marketing",
+  SECURITY: "Sicherheit",
 };
 export function roleLabel(role: string): string {
   return ROLE_LABEL[role] ?? role;

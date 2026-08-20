@@ -10,6 +10,7 @@ import JsonViewer from "@/components/ui/JsonViewer";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useLeagueNames } from "@/lib/useLeagueNames";
 import type { ModelEvaluation, ModelLabOverview, ModelVersionDetail } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -35,6 +36,7 @@ export default function ModelDetailClient({ id }: { id: string }) {
   const [action, setAction] = useState<"promote" | "rollback" | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { leagueName } = useLeagueNames();
 
   const load = useCallback(async () => {
     setState("loading");
@@ -102,8 +104,12 @@ export default function ModelDetailClient({ id }: { id: string }) {
       header: "Testart",
       cell: (e) => <Badge tone="neutral">{EVAL_TYPE_LABEL[e.evaluation_type] ?? e.evaluation_type}</Badge>,
     },
-    { header: "Umfang", info: "Welche Spiele einbezogen wurden (z.B. alle oder nur 'saubere' Fälle ohne Störfaktoren).", cell: (e) => fmt(e.match_scope) },
-    { header: "Liga", cell: (e) => fmt(e.league_id ?? "GLOBAL") },
+    {
+      header: "Umfang",
+      info: "Welche Spiele einbezogen wurden (z.B. alle oder nur 'saubere' Fälle ohne Störfaktoren).",
+      cell: (e) => (e.match_scope === "clean" ? "Nur saubere Fälle" : e.match_scope === "all" ? "Alle Spiele" : fmt(e.match_scope)),
+    },
+    { header: "Liga", cell: (e) => (e.league_id ? leagueName(e.league_id) : "Global") },
     { header: "Stichprobe", info: "Anzahl Spiele, auf denen dieses Testergebnis beruht.", cell: (e) => fmt(e.sample_size) },
     {
       header: "Brier Score",
@@ -145,7 +151,7 @@ export default function ModelDetailClient({ id }: { id: string }) {
           <Card title={model.readable_version} action={<Badge tone={model.status === "champion" ? "gold" : "neutral"}>{modelStatusLabel(model.status)}</Badge>}>
             <KeyValueList
               data={{
-                Liga: model.league_id ?? "GLOBAL",
+                Liga: model.league_id ? leagueName(model.league_id) : "Global",
                 Markt: model.market,
                 Generation: model.generation,
                 "Übergeordnetes Modell": model.parent_model_id,
@@ -234,8 +240,8 @@ export default function ModelDetailClient({ id }: { id: string }) {
           title={action === "promote" ? "Zum Champion befördern" : "Rollback durchführen"}
           description={
             action === "promote"
-              ? `"${model?.readable_version}" wird neuer Champion für ${model?.league_id ?? "GLOBAL"} × ${model?.market}. Der bisherige Champion wird abgelöst.`
-              : `Champion für ${model?.league_id ?? "GLOBAL"} × ${model?.market} wird auf "${model?.readable_version}" zurückgesetzt.`
+              ? `"${model?.readable_version}" wird neuer Champion für ${model?.league_id ? leagueName(model.league_id) : "Global"} × ${model?.market}. Der bisherige Champion wird abgelöst.`
+              : `Champion für ${model?.league_id ? leagueName(model.league_id) : "Global"} × ${model?.market} wird auf "${model?.readable_version}" zurückgesetzt.`
           }
           confirmLabel="Bestätigen"
           busy={busy}

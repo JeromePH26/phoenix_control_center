@@ -7,6 +7,7 @@ import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
+import { useLeagueNames } from "@/lib/useLeagueNames";
 import type { ModelVersion } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -44,6 +45,7 @@ export default function ModelsClient() {
 
   const [models, setModels] = useState<ModelVersion[]>([]);
   const [state, setState] = useState<LoadState>("loading");
+  const { leagueName } = useLeagueNames();
 
   const load = useCallback(async () => {
     setState("loading");
@@ -72,7 +74,7 @@ export default function ModelsClient() {
 
   const columns: Column<ModelVersion>[] = [
     { header: "Version", cell: (m) => <span className="font-medium text-neutral-900">{m.readable_version}</span> },
-    { header: "Liga", cell: (m) => fmt(m.league_id ?? "GLOBAL") },
+    { header: "Liga", cell: (m) => (m.league_id ? leagueName(m.league_id) : "Global") },
     { header: "Markt", cell: (m) => fmt(m.market) },
     {
       header: "Status",

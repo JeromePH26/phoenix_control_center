@@ -41,6 +41,73 @@ function areaLabel(area: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+const OBJECT_TYPE_LABEL: Record<string, string> = {
+  app_status: "App-Status",
+  article: "Artikel",
+  asset: "Wappen/Bild",
+  broadcast: "Push-Nachricht",
+  campaign: "Werbekampagne",
+  config: "Einstellung",
+  employee: "Mitarbeiter",
+  feature: "Premium-Funktion",
+  flag: "Feature Flag",
+  incident: "Incident",
+  match: "Spiel",
+  module: "Modul",
+  session: "Session",
+  ticket: "Support-Ticket",
+  user: "Nutzer",
+};
+function objectTypeLabel(objectType: string): string {
+  return OBJECT_TYPE_LABEL[objectType] ?? objectType;
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  "app_control.status_change": "App-Status geändert",
+  "article.create": "Artikel erstellt",
+  "article.update": "Artikel geändert",
+  "asset.replace": "Wappen/Bild ersetzt",
+  "broadcast.send": "Push-Nachricht gesendet",
+  "campaign.create": "Werbekampagne erstellt",
+  "campaign.update": "Werbekampagne geändert",
+  "employee.create": "Mitarbeiter angelegt",
+  "employee.disable": "Mitarbeiter deaktiviert",
+  "employee.update": "Mitarbeiter geändert",
+  "feature.tier_change": "Premium-Funktion geändert",
+  "flag.create": "Feature Flag erstellt",
+  "flag.update": "Feature Flag geändert",
+  "incident.create": "Incident erstellt",
+  "incident.update": "Incident geändert",
+  "match.flags_update": "Spiel-Einstellungen geändert",
+  "module.toggle": "Modul umgeschaltet",
+  "premium.manual_grant": "Premium manuell vergeben",
+  "premium.manual_revoke": "Premium manuell entzogen",
+  "promotion": "Modell befördert",
+  "promotion_rejected": "Beförderung abgelehnt",
+  "release.update": "Release-Einstellungen geändert",
+  "rollback": "Modell zurückgesetzt",
+  "session.revoke": "Session widerrufen",
+  "ticket.update": "Support-Ticket geändert",
+  "user.ban": "Nutzer gesperrt",
+  "user.session_revoke": "Nutzer-Session widerrufen",
+  "user.unban": "Nutzersperre aufgehoben",
+};
+function actionLabel(action: string): string {
+  if (ACTION_LABEL[action]) return ACTION_LABEL[action];
+  const spaced = action.replace(/[._]/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "–";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return `${date.toLocaleDateString("de-DE")} · ${date.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
+}
+
 export default function AuditLogClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,18 +159,22 @@ export default function AuditLogClient() {
   }
 
   const columns: Column<AuditLogEntry>[] = [
-    { header: "Zeit", cell: (e) => <span className="whitespace-nowrap text-neutral-500">{e.createdAt}</span> },
+    { header: "Zeit", cell: (e) => <span className="whitespace-nowrap text-neutral-500">{formatDateTime(e.createdAt)}</span> },
     { header: "Mitarbeiter", cell: (e) => e.employeeLogin },
     { header: "Bereich", info: "In welchem Teil des Systems die Änderung passiert ist.", cell: (e) => <Badge tone="gold">{areaLabel(e.area)}</Badge> },
-    { header: "Objekt", info: "Der genaue Datensatz, der geändert wurde, mit seiner internen Nummer.", cell: (e) => `${e.objectType} #${e.objectId}` },
-    { header: "Aktion", cell: (e) => e.action },
+    {
+      header: "Objekt",
+      info: "Der genaue Datensatz, der geändert wurde, mit seiner internen Nummer.",
+      cell: (e) => `${objectTypeLabel(e.objectType ?? "")} #${e.objectId}`,
+    },
+    { header: "Aktion", cell: (e) => actionLabel(e.action) },
     { header: "Vorher", info: "Der Zustand der Daten, bevor die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.previousValue} label="Vorher" /> },
     { header: "Nachher", info: "Der Zustand der Daten, nachdem die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.newValue} label="Nachher" /> },
     { header: "Grund / Kommentar", cell: (e) => e.reason || e.comment || "–" },
     {
       header: "Rückgängig?",
       info: "Zeigt an, ob diese Änderung später wieder zurückgenommen wurde.",
-      cell: (e) => (e.reverted ? <Badge tone="red">Reverted</Badge> : <Badge tone="neutral">Nein</Badge>),
+      cell: (e) => (e.reverted ? <Badge tone="red">Zurückgenommen</Badge> : <Badge tone="neutral">Nein</Badge>),
     },
   ];
 

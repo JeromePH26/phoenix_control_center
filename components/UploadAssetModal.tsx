@@ -5,6 +5,19 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import type { FootballAsset } from "@/lib/types";
 
+const ASSET_STATUS_LABEL: Record<string, string> = {
+  OK: "Vorhanden",
+  MISSING: "Fehlt",
+  STALE: "Veraltet",
+};
+function assetStatusLabel(status: string): string {
+  return ASSET_STATUS_LABEL[status] ?? status;
+}
+const ASSET_TYPE_LABEL: Record<string, string> = { team: "Team", league: "Liga" };
+function assetTypeLabel(type: string): string {
+  return ASSET_TYPE_LABEL[type] ?? type;
+}
+
 /**
  * Uploads a replacement image for a team/league asset (logo). The file is
  * sent as multipart/form-data to our own proxy route, which reads it
@@ -58,8 +71,8 @@ export default function UploadAssetModal({
     <Modal title={`Asset ersetzen: ${asset.entityName ?? asset.id}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-3">
         <p className="text-sm text-neutral-600">
-          {asset.type} · {asset.id} · aktueller Status:{" "}
-          <span className="font-medium text-neutral-900">{asset.status}</span>
+          {assetTypeLabel(asset.type)} · {asset.id} · aktueller Status:{" "}
+          <span className="font-medium text-neutral-900">{assetStatusLabel(asset.status)}</span>
         </p>
         <div>
           <label htmlFor="asset-file" className="mb-1 block text-xs font-medium text-neutral-600">

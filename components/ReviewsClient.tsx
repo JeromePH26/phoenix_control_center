@@ -8,14 +8,27 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useLeagueNames } from "@/lib/useLeagueNames";
 import type { MonthlyReview } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
 
-function recommendationTone(recommendation: string): "green" | "gold" | "neutral" {
-  if (recommendation.toLowerCase().includes("promot")) return "gold";
-  if (recommendation.toLowerCase().includes("keep") || recommendation.toLowerCase().includes("hold")) return "green";
-  return "neutral";
+const RECOMMENDATION_LABEL: Record<string, string> = {
+  PROMOTION_EMPFOHLEN: "Beförderung empfohlen",
+  WEITER_TESTEN: "Weiter testen",
+  CHALLENGER_SCHLECHTER: "Herausforderer schlechter",
+  NICHT_GENUG_DATEN: "Nicht genug Daten",
+  KEIN_GEEIGNETER_CHALLENGER: "Kein geeigneter Herausforderer",
+};
+function recommendationLabel(recommendation: string): string {
+  return RECOMMENDATION_LABEL[recommendation] ?? recommendation;
+}
+
+function recommendationTone(recommendation: string): "green" | "gold" | "neutral" | "red" {
+  if (recommendation === "PROMOTION_EMPFOHLEN") return "gold";
+  if (recommendation === "CHALLENGER_SCHLECHTER") return "red";
+  if (recommendation === "NICHT_GENUG_DATEN" || recommendation === "KEIN_GEEIGNETER_CHALLENGER") return "neutral";
+  return "green";
 }
 
 function fmt(value: unknown): string {
@@ -24,6 +37,7 @@ function fmt(value: unknown): string {
 }
 
 export default function ReviewsClient() {
+  const { leagueName } = useLeagueNames();
   const [reviews, setReviews] = useState<MonthlyReview[]>([]);
   const [state, setState] = useState<LoadState>("loading");
 
@@ -76,12 +90,12 @@ export default function ReviewsClient() {
 
   const columns: Column<MonthlyReview>[] = [
     { header: "Zeitraum", cell: (r) => `${r.review_month}/${r.review_year}` },
-    { header: "Liga", cell: (r) => fmt(r.league_id ?? "GLOBAL") },
+    { header: "Liga", cell: (r) => (r.league_id ? leagueName(r.league_id) : "Global") },
     { header: "Markt", cell: (r) => r.market },
     { header: "Champion", info: "ID des aktuell aktiven Modells für diese Liga × Markt-Kombination.", cell: (r) => fmt(r.champion_model_id) },
     { header: "Challenger", info: "ID des Herausforderer-Modells, das mit dem Champion verglichen wurde.", cell: (r) => fmt(r.challenger_model_id) },
     { header: "Sample", info: "Anzahl der Spiele, auf denen dieser Vergleich beruht.", cell: (r) => fmt(r.same_match_sample) },
-    { header: "Empfehlung", cell: (r) => <Badge tone={recommendationTone(r.recommendation)}>{r.recommendation}</Badge> },
+    { header: "Empfehlung", cell: (r) => <Badge tone={recommendationTone(r.recommendation)}>{recommendationLabel(r.recommendation)}</Badge> },
     { header: "Begründung", cell: (r) => fmt(r.reason) },
     { header: "Geprüft am", cell: (r) => fmt(r.reviewed_at) },
   ];

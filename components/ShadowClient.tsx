@@ -8,6 +8,7 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useLeagueNames } from "@/lib/useLeagueNames";
 import type { ShadowPrediction } from "@/lib/types";
 
 type BatchAction = "generate" | "settle" | null;
@@ -28,6 +29,7 @@ const inputClass =
   "w-40 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
 export default function ShadowClient() {
+  const { leagueName } = useLeagueNames();
   const [batchAction, setBatchAction] = useState<BatchAction>(null);
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export default function ShadowClient() {
 
   const columns: Column<ShadowPrediction>[] = [
     { header: "Fixture", cell: (p) => p.fixture_id },
-    { header: "Liga", cell: (p) => p.league_id },
+    { header: "Liga", cell: (p) => (p.league_id ? leagueName(p.league_id) : "Global") },
     { header: "Markt", cell: (p) => p.market },
     { header: "Settled", cell: (p) => <Badge tone={p.settled ? "green" : "neutral"}>{p.settled ? "Ja" : "Nein"}</Badge> },
     { header: "Brier", info: "Brier Score: misst die Treffgenauigkeit der Wahrscheinlichkeiten. Niedriger = besser.", cell: (p) => fmt(p.brier_score) },
