@@ -79,6 +79,8 @@ const ACTION_LABEL: Record<string, string> = {
   "incident.create": "Incident erstellt",
   "incident.update": "Incident geändert",
   "match.flags_update": "Spiel-Einstellungen geändert",
+  "match.status_override": "Spielstatus manuell gesetzt",
+  "match.status_override_clear": "Manuelle Status-Sperre aufgehoben",
   "module.toggle": "Modul umgeschaltet",
   "premium.manual_grant": "Premium manuell vergeben",
   "premium.manual_revoke": "Premium manuell entzogen",

@@ -66,6 +66,9 @@ const KNOWN_KEYS = new Set([
   "hasAnalysis",
   "latestAnalysis",
   "analysisSnapshot",
+  "status_locked",
+  "status_lock_reason",
+  "status_locked_at",
 ]);
 
 function fmt(value: unknown): string {
@@ -126,6 +129,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<AnalysisHistoryRow[] | null>(null);
   const [historyState, setHistoryState] = useState<"loading" | "loaded" | "error">("loading");
+  const [showStatusEditor, setShowStatusEditor] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -198,6 +204,49 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
+  async function setStatusOverride(form: FormData) {
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      const res = await fetch(`/api/football/matches/${encodeURIComponent(params.id)}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: form.get("status"), reason: form.get("reason") }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setStatusError(data?.error ?? `Fehler (Status ${res.status}).`);
+        return;
+      }
+      setShowStatusEditor(false);
+      load();
+    } catch {
+      setStatusError("Verbindung zum Backend fehlgeschlagen.");
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function clearStatusOverride() {
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      const res = await fetch(`/api/football/matches/${encodeURIComponent(params.id)}/status`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setStatusError(data?.error ?? `Fehler (Status ${res.status}).`);
+        return;
+      }
+      load();
+    } catch {
+      setStatusError("Verbindung zum Backend fehlgeschlagen.");
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
   // Felder, die zwar vom Backend mitgeschickt werden, aber für niemanden
   // hier lesbar/nützlich sind (z.B. der komplette rohe API-Football-JSON-
   // Blob) - die werden komplett ausgeblendet statt als unlesbarer Text
@@ -258,8 +307,14 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               </div>
               <div>
                 <p className="text-neutral-500">Status</p>
-                <p>
+                <p className="flex items-center gap-1.5">
                   <Badge tone="gold">{match.status ? matchStatusLabel(match.status) : fmt(match.status)}</Badge>
+                  {Boolean(match.status_locked) && (
+                    <Badge tone="red">
+                      Manuell gesperrt
+                      <InfoTooltip text={`Grund: ${match.status_lock_reason ?? "kein Grund hinterlegt"}. Solange gesperrt, überschreibt der automatische Datenabgleich diesen Status nicht mehr.`} />
+                    </Badge>
+                  )}
                 </p>
               </div>
               <div>
@@ -268,6 +323,50 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   {match.homeGoals ?? "–"} : {match.awayGoals ?? "–"}
                 </p>
               </div>
+            </div>
+            <div className="mt-3 border-t border-neutral-100 pt-3">
+              {!showStatusEditor && (
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" onClick={() => setShowStatusEditor(true)}>
+                    Status manuell setzen
+                  </Button>
+                  {Boolean(match.status_locked) && (
+                    <Button variant="secondary" disabled={statusBusy} onClick={clearStatusOverride}>
+                      Sperre aufheben
+                    </Button>
+                  )}
+                </div>
+              )}
+              {showStatusEditor && (
+                <form action={setStatusOverride} className="space-y-2">
+                  <p className="text-xs text-neutral-400">
+                    Für Ausnahmefälle, z.B. wenn ein Spiel abgesagt wurde, bevor der Datenanbieter das meldet. Wirkt
+                    sofort in der App und wird gegen den nächsten automatischen Abgleich gesperrt.
+                  </p>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <select name="status" required className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900">
+                      {Object.entries(MATCH_STATUS_LABEL).map(([code, label]) => (
+                        <option key={code} value={code}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="reason"
+                      required
+                      placeholder="Grund (Pflicht)"
+                      className="w-64 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900"
+                    />
+                    <Button type="submit" disabled={statusBusy}>
+                      Bestätigen
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowStatusEditor(false)}>
+                      Abbrechen
+                    </Button>
+                  </div>
+                </form>
+              )}
+              {statusError && <p className="mt-2 text-sm text-red-600">{statusError}</p>}
             </div>
           </Card>
 
