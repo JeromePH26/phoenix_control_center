@@ -166,6 +166,24 @@ export interface FootballLeague {
   [key: string]: unknown;
 }
 
+/** Row shape from GET /api/admin/football/teams (raw SQL column names). */
+export interface FootballTeamProfile {
+  id: string;
+  name: string;
+  logo?: string | null;
+  league_id?: string | null;
+  league_name?: string | null;
+  country?: string | null;
+  [key: string]: unknown;
+}
+
+export interface FootballTeamListResponse {
+  teams: FootballTeamProfile[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 /** Row shape from GET /api/admin/football/tips - the backend returns the raw SQL column names (snake_case); this UI never shows those keys directly, only translated German labels built from them. */
 export interface FootballTip {
   phase_two_scan_run_id: number;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -30,11 +31,21 @@ function statusTone(status: string | undefined): "green" | "red" | "neutral" {
 const KNOWN_KEYS = new Set(["leagueId", "name", "manualStatus"]);
 
 export default function FootballLeaguesClient() {
+  const router = useRouter();
   const [leagues, setLeagues] = useState<FootballLeague[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [pending, setPending] = useState<{ league: FootballLeague; status: LeagueManualStatus } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredLeagues = useMemo(() => {
+    if (!search.trim()) return leagues;
+    const q = search.trim().toLowerCase();
+    return leagues.filter(
+      (l) => l.name?.toLowerCase().includes(q) || l.leagueId?.toLowerCase().includes(q) || String(l.country ?? "").toLowerCase().includes(q)
+    );
+  }, [leagues, search]);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -115,7 +126,8 @@ export default function FootballLeaguesClient() {
               key={s}
               variant={l.manualStatus === s ? "primary" : "secondary"}
               disabled={l.manualStatus === s}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setPending({ league: l, status: s });
                 setError(null);
               }}
@@ -135,7 +147,19 @@ export default function FootballLeaguesClient() {
           Ligen / Whitelist
           <InfoTooltip text="Whitelist = Liste erlaubter/freigegebener Ligen. Hier legst du fest, welche Ligen in der App sicher angezeigt werden dürfen." />
         </h1>
-        <p className="text-sm text-neutral-400">Manueller Freigabe- und Sperrstatus je Liga.</p>
+        <p className="text-sm text-neutral-400">Manueller Freigabe- und Sperrstatus je Liga. Klick auf eine Liga für Details.</p>
+      </div>
+
+      <div>
+        <label htmlFor="league-search" className="mb-1 block text-xs font-medium text-neutral-600">
+          Suche (Name, ID, Land)
+        </label>
+        <input
+          id="league-search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-72 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
+        />
       </div>
 
       <Card>
@@ -150,7 +174,13 @@ export default function FootballLeaguesClient() {
           <StateMessage title="Ligen konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
         )}
         {state === "loaded" && (
-          <DataTable columns={columns} rows={leagues} rowKey={(l) => l.leagueId} emptyMessage="Keine Ligen gefunden" />
+          <DataTable
+            columns={columns}
+            rows={filteredLeagues}
+            rowKey={(l) => l.leagueId}
+            emptyMessage="Keine Ligen gefunden"
+            onRowClick={(l) => router.push(`/football/leagues/${encodeURIComponent(l.leagueId)}`)}
+          />
         )}
       </Card>
 
