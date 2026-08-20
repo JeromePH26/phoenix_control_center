@@ -74,6 +74,17 @@ export interface OverviewPayload {
   } | null;
   modelLab?: Record<string, unknown> | null;
   pendingJobs?: Record<string, unknown> | null;
+  footballToday?: {
+    scheduledMatches?: number | null;
+    newAnalysesToday?: number | null;
+    tipsToday?: number | null;
+    matchesWithoutRecommendation?: number | null;
+    analysisRunning?: number | null;
+    analysisFailed?: number | null;
+    lowDataQuality?: number | null;
+    newValueSignals?: number | null;
+    openSettlementJobs?: number | null;
+  } | null;
   [key: string]: unknown;
 }
 

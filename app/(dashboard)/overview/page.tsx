@@ -7,14 +7,36 @@ import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
 import type { OverviewPayload } from "@/lib/types";
 
-function StatTile({ label, value }: { label: string; value: number | null | undefined }) {
-  return (
-    <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
+function StatTile({
+  label,
+  value,
+  tone = "neutral",
+  href,
+}: {
+  label: string;
+  value: number | null | undefined;
+  tone?: "neutral" | "good" | "warning" | "bad";
+  href?: string;
+}) {
+  const toneClasses: Record<string, string> = {
+    neutral: "border-neutral-100 bg-neutral-50 text-neutral-900",
+    good: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    warning: "border-amber-100 bg-amber-50 text-amber-700",
+    bad: "border-red-100 bg-red-50 text-red-700",
+  };
+  const content = (
+    <div className={`rounded-md border px-3 py-2.5 ${toneClasses[tone]}`}>
       <p className="text-xs text-neutral-500">{label}</p>
-      <p className="mt-0.5 text-xl font-semibold text-neutral-900">
+      <p className="mt-0.5 text-xl font-semibold">
         {value === null || value === undefined ? "–" : value}
       </p>
     </div>
+  );
+  if (!href) return content;
+  return (
+    <a href={href} className="block transition hover:opacity-80">
+      {content}
+    </a>
   );
 }
 
@@ -64,6 +86,78 @@ export default async function OverviewPage() {
           title="Übersicht konnte nicht geladen werden"
           description="Beim Laden der Daten ist ein Fehler aufgetreten."
         />
+      )}
+
+      {!errorState && (
+        <Card
+          title={
+            <span className="inline-flex items-center gap-1">
+              Heute
+              <InfoTooltip text="Was PHÖNIX heute (Berliner Kalendertag) für den Fußball-Bereich tatsächlich getan hat - direkt aus der Datenbank, nicht geschätzt." />
+            </span>
+          }
+        >
+          {overview?.footballToday ? (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              <StatTile
+                label="Neue Analysen heute"
+                value={overview.footballToday.newAnalysesToday}
+                href="/football/matches"
+              />
+              <StatTile
+                label="PHÖNIX Tipps heute"
+                value={overview.footballToday.tipsToday}
+                tone="good"
+                href="/football/matches"
+              />
+              <StatTile
+                label="Spiele ohne Empfehlung"
+                value={overview.footballToday.matchesWithoutRecommendation}
+                tone={
+                  (overview.footballToday.matchesWithoutRecommendation ?? 0) > 0
+                    ? "warning"
+                    : "neutral"
+                }
+                href="/football/matches"
+              />
+              <StatTile
+                label="Analyse läuft"
+                value={overview.footballToday.analysisRunning}
+                href="/infrastructure/jobs"
+              />
+              <StatTile
+                label="Fehlgeschlagen"
+                value={overview.footballToday.analysisFailed}
+                tone={(overview.footballToday.analysisFailed ?? 0) > 0 ? "bad" : "neutral"}
+                href="/infrastructure/jobs"
+              />
+              <StatTile
+                label="Datenqualität zu niedrig"
+                value={overview.footballToday.lowDataQuality}
+                tone={(overview.footballToday.lowDataQuality ?? 0) > 0 ? "warning" : "neutral"}
+                href="/football/data-quality"
+              />
+              <StatTile
+                label="Neue Value-Signale"
+                value={overview.footballToday.newValueSignals}
+                tone="good"
+                href="/football/matches"
+              />
+              <StatTile
+                label="Offene Settlements"
+                value={overview.footballToday.openSettlementJobs}
+                href="/football/settlement"
+              />
+              <StatTile
+                label="Geplante Spiele heute"
+                value={overview.footballToday.scheduledMatches}
+                href="/football/matches"
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-400">Keine Daten verfügbar</p>
+          )}
+        </Card>
       )}
 
       {!errorState && (
