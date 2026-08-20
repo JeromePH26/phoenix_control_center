@@ -153,6 +153,22 @@ export default async function OverviewPage() {
                 value={overview.footballToday.scheduledMatches}
                 href="/football/matches"
               />
+              <StatTile
+                label="Aktive Live-Spiele"
+                value={overview.today?.activeLiveMatches}
+                tone="good"
+              />
+              <StatTile
+                label="Aktive Supportfälle"
+                value={overview.today?.activeSupportCases}
+                tone={(overview.today?.activeSupportCases ?? 0) > 0 ? "warning" : "neutral"}
+                href="/support/tickets"
+              />
+              <StatTile
+                label="Aktive Nutzer (24h)"
+                value={overview.today?.activeUsers}
+                href="/users/accounts"
+              />
             </div>
           ) : (
             <p className="text-sm text-neutral-400">Keine Daten verfügbar</p>

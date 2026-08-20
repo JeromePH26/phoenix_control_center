@@ -85,6 +85,11 @@ export interface OverviewPayload {
     newValueSignals?: number | null;
     openSettlementJobs?: number | null;
   } | null;
+  today?: {
+    activeSupportCases?: number | null;
+    activeUsers?: number | null;
+    activeLiveMatches?: number | null;
+  } | null;
   [key: string]: unknown;
 }
 
