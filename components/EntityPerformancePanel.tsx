@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import InfoTooltip from "@/components/ui/InfoTooltip";
-import type { FootballTip, PerformanceAggregateResponse, PerformanceByMarket } from "@/lib/types";
+import type { FootballTip, PerformanceAggregateResponse, PerformanceByMarket, PerformanceTimeSeriesPoint } from "@/lib/types";
 
 type Period = "7d" | "30d" | "3m" | "6m" | "1y" | "all" | "custom";
 const PERIOD_LABEL: Record<Period, string> = {
@@ -15,6 +16,23 @@ const PERIOD_LABEL: Record<Period, string> = {
   all: "Gesamt",
   custom: "Benutzerdefiniert",
 };
+
+type Metric = "hitRatePercent" | "roiPercent" | "yieldPercent" | "profitUnits" | "tipCount" | "avgOdds" | "avgValuePercent";
+const METRIC_LABEL: Record<Metric, string> = {
+  hitRatePercent: "Trefferquote",
+  roiPercent: "ROI",
+  yieldPercent: "Yield",
+  profitUnits: "Gewinn/Verlust",
+  tipCount: "Anzahl Tipps",
+  avgOdds: "Ø Quote",
+  avgValuePercent: "Ø Value",
+};
+function formatMetricValue(metric: Metric, v: number): string {
+  if (metric === "tipCount") return String(Math.round(v));
+  if (metric === "avgOdds") return v.toFixed(2);
+  if (metric === "profitUnits") return `${v >= 0 ? "+" : ""}${(Math.round(v * 100) / 100).toFixed(2)} Einh.`;
+  return `${v >= 0 ? "+" : ""}${Math.round(v * 10) / 10} %`;
+}
 
 const MARKET_LABEL: Record<string, string> = {
   homeWin: "Heimsieg",
@@ -72,11 +90,15 @@ const inputClass =
 export default function EntityPerformancePanel({
   leagueId,
   teamId,
+  mode = "full",
 }: {
   leagueId?: string;
   teamId?: string;
+  /** "performance" zeigt nur KPIs+Chart (Section 4), "markets" nur die Markt-Tabelle (Section 6/7), "full" beides (Rückwärtskompatibilität). */
+  mode?: "full" | "performance" | "markets";
 }) {
   const [period, setPeriod] = useState<Period>("3m");
+  const [metric, setMetric] = useState<Metric>("hitRatePercent");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [homeAway, setHomeAway] = useState<"" | "home" | "away">("");
@@ -84,7 +106,16 @@ export default function EntityPerformancePanel({
   const [minConfidence, setMinConfidence] = useState("");
   const [sortKey, setSortKey] = useState<keyof PerformanceByMarket>("sampleSize");
   const [sortDesc, setSortDesc] = useState(true);
-  const [focusedMarket, setFocusedMarket] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const focusedMarket = searchParams.get("market");
+  function setFocusedMarket(market: string | null) {
+    const qs = new URLSearchParams(searchParams.toString());
+    if (market) qs.set("market", market);
+    else qs.delete("market");
+    const query = qs.toString();
+    router.replace(`${window.location.pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  }
 
   const [data, setData] = useState<PerformanceAggregateResponse | null>(null);
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
@@ -199,7 +230,8 @@ export default function EntityPerformancePanel({
         </button>
         <h3 className="text-lg font-semibold text-neutral-900">{marketLabel(focusedMarket)}</h3>
         <KpiGrid summary={fSummary} isSmallSample={fSummary.won + fSummary.lost < SMALL_SAMPLE_THRESHOLD} />
-        <Chart series={marketData.timeSeries ?? []} />
+        <MetricSelect metric={metric} onChange={setMetric} />
+        <Chart series={marketData.timeSeries ?? []} metric={metric} />
         <div>
           <p className="mb-2 text-sm font-medium text-neutral-700">Zugehörige Tipps</p>
           <TipsTable tips={marketTips} />
@@ -283,13 +315,19 @@ export default function EntityPerformancePanel({
               Geringe Datenbasis ({summary.won + summary.lost} entschiedene Tipps) - Werte noch wenig aussagekräftig.
             </p>
           )}
-          <KpiGrid summary={summary} isSmallSample={isSmallSample} previous={previous} />
-          {(data?.timeSeries?.length ?? 0) === 0 ? (
-            <p className="text-sm text-neutral-400">Für diesen Zeitraum liegen noch nicht genügend Daten vor.</p>
-          ) : (
-            <Chart series={data!.timeSeries!} />
+          {mode !== "markets" && (
+            <>
+              <KpiGrid summary={summary} isSmallSample={isSmallSample} previous={previous} />
+              <MetricSelect metric={metric} onChange={setMetric} />
+              {(data?.timeSeries?.length ?? 0) === 0 ? (
+                <p className="text-sm text-neutral-400">Für diesen Zeitraum liegen noch nicht genügend Daten vor.</p>
+              ) : (
+                <Chart series={data!.timeSeries!} metric={metric} />
+              )}
+            </>
           )}
 
+          {mode !== "performance" && (
           <div>
             <p className="mb-2 flex items-center gap-1 text-sm font-medium text-neutral-700">
               Markt-Performance
@@ -357,8 +395,24 @@ export default function EntityPerformancePanel({
               </div>
             )}
           </div>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+function MetricSelect({ metric, onChange }: { metric: Metric; onChange: (m: Metric) => void }) {
+  return (
+    <div>
+      <label className="mb-1 block text-[10px] text-neutral-500">Kennzahl</label>
+      <select value={metric} onChange={(e) => onChange(e.target.value as Metric)} className={inputClass}>
+        {(Object.keys(METRIC_LABEL) as Metric[]).map((m) => (
+          <option key={m} value={m}>
+            {METRIC_LABEL[m]}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -420,36 +474,52 @@ function KpiGrid({
   );
 }
 
-function Chart({ series }: { series: PerformanceAggregateResponse["timeSeries"] }) {
+/** Section 4: Chart zeigt die vom Nutzer gewählte Kennzahl, nicht mehr fest die Trefferquote. Signierte Kennzahlen (ROI/Yield/Gewinn-Verlust/Ø Value) bekommen eine Nulllinie in der Mitte, damit Verluste sichtbar unter die Linie fallen. */
+function Chart({ series, metric }: { series: PerformanceTimeSeriesPoint[]; metric: Metric }) {
   const points = series ?? [];
   if (points.length === 0) {
     return <p className="text-sm text-neutral-400">Für diesen Zeitraum liegen noch nicht genügend Daten vor.</p>;
   }
+  const signed = new Set<Metric>(["roiPercent", "yieldPercent", "profitUnits", "avgValuePercent"]);
+  const isSigned = signed.has(metric);
+  const values = points.map((p) => (typeof p[metric] === "number" ? (p[metric] as number) : null));
+  const finiteValues = values.filter((v): v is number => v !== null);
+  const positiveCeiling = metric === "hitRatePercent" ? 100 : Math.max(...finiteValues.map((v) => Math.abs(v)), 1);
   const chartHeight = 120;
   const barWidth = Math.max(10, Math.min(48, 640 / points.length - 6));
   const gap = 6;
+  const zeroY = isSigned ? chartHeight / 2 : chartHeight;
+  const usableHeight = isSigned ? chartHeight / 2 : chartHeight;
+
   return (
     <div className="overflow-x-auto">
       <svg width={Math.max(640, points.length * (barWidth + gap))} height={chartHeight + 36}>
+        {isSigned && <line x1={0} y1={zeroY} x2={points.length * (barWidth + gap)} y2={zeroY} stroke="#d4d4d4" strokeWidth={1} />}
         {points.map((p, i) => {
-          const decided = p.won + p.lost;
-          const rate = decided > 0 ? p.won / decided : 0;
-          const barHeight = decided > 0 ? Math.max(2, rate * chartHeight) : 2;
+          const v = values[i];
           const x = i * (barWidth + gap);
           const label = new Date(p.period).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+          if (v === null) {
+            return (
+              <g key={p.period}>
+                <title>{label}: keine Daten</title>
+                <rect x={x} y={zeroY - 2} width={barWidth} height={2} fill="#e5e5e5" rx={2} />
+                <text x={x + barWidth / 2} y={chartHeight + 14} textAnchor="middle" fontSize="9" fill="#737373">
+                  {label}
+                </text>
+              </g>
+            );
+          }
+          const magnitude = Math.min(1, Math.abs(v) / positiveCeiling);
+          const barHeight = Math.max(2, magnitude * usableHeight);
+          const goodColor = metric === "hitRatePercent" ? v >= 50 : v >= 0;
+          const y = isSigned ? (v >= 0 ? zeroY - barHeight : zeroY) : chartHeight - barHeight;
           return (
             <g key={p.period}>
               <title>
-                {label}: {p.won} gewonnen, {p.lost} verloren{decided > 0 ? ` (${Math.round(rate * 1000) / 10} %)` : " (offen)"}
+                {label}: {formatMetricValue(metric, v)}
               </title>
-              <rect
-                x={x}
-                y={chartHeight - barHeight}
-                width={barWidth}
-                height={barHeight}
-                fill={decided === 0 ? "#e5e5e5" : rate >= 0.5 ? "#10b981" : "#ef4444"}
-                rx={2}
-              />
+              <rect x={x} y={y} width={barWidth} height={barHeight} fill={goodColor ? "#10b981" : "#ef4444"} rx={2} />
               <text x={x + barWidth / 2} y={chartHeight + 14} textAnchor="middle" fontSize="9" fill="#737373">
                 {label}
               </text>
@@ -476,6 +546,7 @@ function formatDateTime(iso: string | null | undefined): string {
 }
 
 function TipsTable({ tips }: { tips: FootballTip[] }) {
+  const router = useRouter();
   if (tips.length === 0) return <p className="text-sm text-neutral-400">Keine Tipps gefunden.</p>;
   return (
     <div className="overflow-x-auto">
@@ -490,7 +561,11 @@ function TipsTable({ tips }: { tips: FootballTip[] }) {
         </thead>
         <tbody className="divide-y divide-neutral-100">
           {tips.map((t) => (
-            <tr key={`${t.phase_two_scan_run_id}-${t.fixture_id}`}>
+            <tr
+              key={`${t.phase_two_scan_run_id}-${t.fixture_id}`}
+              onClick={() => router.push(`/football/matches/${encodeURIComponent(t.fixture_id)}`)}
+              className="cursor-pointer hover:bg-neutral-50"
+            >
               <td className="py-2 pr-4 whitespace-nowrap text-neutral-500">{formatDateTime(t.kickoff)}</td>
               <td className="py-2 pr-4 font-medium text-neutral-900">
                 {t.home_team_name} – {t.away_team_name}

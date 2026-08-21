@@ -44,6 +44,7 @@ const KNOWN_KEYS = new Set([
   "last_seen_at",
   "seasons",
   "gender",
+  "has_logo",
 ]);
 
 const HISTORICAL_STATUS_LABEL: Record<string, string> = {
@@ -76,14 +77,20 @@ export default function FootballLeaguesClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [logoFilter, setLogoFilter] = useState<"" | "present" | "missing">("");
 
   const filteredLeagues = useMemo(() => {
-    if (!search.trim()) return leagues;
-    const q = search.trim().toLowerCase();
-    return leagues.filter(
-      (l) => l.name?.toLowerCase().includes(q) || l.leagueId?.toLowerCase().includes(q) || String(l.country ?? "").toLowerCase().includes(q)
-    );
-  }, [leagues, search]);
+    let rows = leagues;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter(
+        (l) => l.name?.toLowerCase().includes(q) || l.leagueId?.toLowerCase().includes(q) || String(l.country ?? "").toLowerCase().includes(q)
+      );
+    }
+    if (logoFilter === "present") rows = rows.filter((l) => l.has_logo === true);
+    if (logoFilter === "missing") rows = rows.filter((l) => l.has_logo !== true);
+    return rows;
+  }, [leagues, search, logoFilter]);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -160,6 +167,10 @@ export default function FootballLeaguesClient() {
     { header: "Analysierte Samples", cell: (l) => (typeof l.total_samples === "number" ? l.total_samples : "0") },
     { header: "Zuletzt gesehen", cell: (l) => formatLastSeen(l.last_seen_at) },
     {
+      header: "Logo",
+      cell: (l) => <Badge tone={l.has_logo ? "green" : "neutral"}>{l.has_logo ? "Vorhanden" : "Fehlt"}</Badge>,
+    },
+    {
       header: "Technische Details",
       cell: (l) => {
         const extra = Object.fromEntries(Object.entries(l).filter(([k]) => !KNOWN_KEYS.has(k)));
@@ -200,16 +211,33 @@ export default function FootballLeaguesClient() {
         <p className="text-sm text-neutral-400">Manueller Freigabe- und Sperrstatus je Liga. Klick auf eine Liga für Details.</p>
       </div>
 
-      <div>
-        <label htmlFor="league-search" className="mb-1 block text-xs font-medium text-neutral-600">
-          Suche (Name, ID, Land)
-        </label>
-        <input
-          id="league-search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-72 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
-        />
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label htmlFor="league-search" className="mb-1 block text-xs font-medium text-neutral-600">
+            Suche (Name, ID, Land)
+          </label>
+          <input
+            id="league-search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-72 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
+          />
+        </div>
+        <div>
+          <label htmlFor="league-logo-filter" className="mb-1 block text-xs font-medium text-neutral-600">
+            Logo
+          </label>
+          <select
+            id="league-logo-filter"
+            value={logoFilter}
+            onChange={(e) => setLogoFilter(e.target.value as "" | "present" | "missing")}
+            className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
+          >
+            <option value="">Alle</option>
+            <option value="present">Vorhanden</option>
+            <option value="missing">Fehlt</option>
+          </select>
+        </div>
       </div>
 
       <Card>

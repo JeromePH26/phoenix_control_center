@@ -47,6 +47,7 @@ function formatDateTime(iso: string | null): string {
 export default function DataCoveragePanel({ leagueId, teamId }: { leagueId?: string; teamId?: string }) {
   const [data, setData] = useState<DataCoverageResponse | null>(null);
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,15 +95,31 @@ export default function DataCoveragePanel({ leagueId, teamId }: { leagueId?: str
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {entries.map(([key, cat]) => {
           const s = statusIcon(cat.status);
+          const isOpen = openCategory === key;
           return (
-            <div key={key} className="flex items-center justify-between gap-2 rounded-md border border-neutral-100 px-3 py-2">
-              <span className="inline-flex items-center gap-1 text-sm text-neutral-700">
-                {CATEGORY_LABEL[key] ?? key}
-                {CATEGORY_INFO[key] && <InfoTooltip text={CATEGORY_INFO[key]} />}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${s.color}`} title={s.label}>
-                {cat.coveragePercent.toFixed(0)} % <span aria-hidden>{s.icon}</span>
-              </span>
+            <div key={key} className="rounded-md border border-neutral-100">
+              <button
+                type="button"
+                onClick={() => setOpenCategory(isOpen ? null : key)}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-neutral-50"
+              >
+                <span className="inline-flex items-center gap-1 text-sm text-neutral-700">
+                  {CATEGORY_LABEL[key] ?? key}
+                  {CATEGORY_INFO[key] && <InfoTooltip text={CATEGORY_INFO[key]} />}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${s.color}`} title={s.label}>
+                  {cat.coveragePercent.toFixed(0)} % <span aria-hidden>{s.icon}</span>
+                </span>
+              </button>
+              {isOpen && (
+                <div className="space-y-1 border-t border-neutral-100 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
+                  <p>Spiele insgesamt: {data.sampleSize}</p>
+                  <p>mit {CATEGORY_LABEL[key] ?? key}: {cat.withCount ?? "–"}</p>
+                  <p>ohne {CATEGORY_LABEL[key] ?? key}: {cat.withoutCount ?? "–"}</p>
+                  <p>Abdeckung: {cat.coveragePercent.toFixed(1)} %</p>
+                  <p>Letztes Update: {formatDateTime(data.lastUpdated)}</p>
+                </div>
+              )}
             </div>
           );
         })}

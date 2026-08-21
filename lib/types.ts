@@ -163,6 +163,7 @@ export interface FootballLeague {
   leagueId: string;
   name: string;
   manualStatus?: LeagueManualStatus | string;
+  has_logo?: boolean;
   [key: string]: unknown;
 }
 
@@ -174,6 +175,17 @@ export interface FootballTeamProfile {
   league_id?: string | null;
   league_name?: string | null;
   country?: string | null;
+  stored_matches?: number;
+  analyzed_matches?: number;
+  tips_count?: number;
+  won?: number;
+  lost?: number;
+  has_logo?: boolean;
+  data_status?: "full" | "partial" | "missing" | string;
+  active_status?: "active" | "inactive" | string;
+  hit_rate_percent?: number | null;
+  roi_percent?: number | null;
+  coverage_percent?: number | null;
   [key: string]: unknown;
 }
 
@@ -831,8 +843,14 @@ export interface PerformanceTimeSeriesPoint {
   period: string;
   won: number;
   lost: number;
+  push: number;
+  tipCount: number;
   hitRatePercent: number | null;
   roiPercent: number | null;
+  yieldPercent: number | null;
+  profitUnits: number;
+  avgOdds: number | null;
+  avgValuePercent: number | null;
 }
 
 export interface PerformanceAggregateResponse {
@@ -847,6 +865,8 @@ export type DataCoverageStatus = "available" | "partial" | "missing" | "unknown"
 export interface DataCoverageCategory {
   coveragePercent: number;
   status: DataCoverageStatus;
+  withCount?: number;
+  withoutCount?: number;
 }
 
 export interface DataCoverageResponse {

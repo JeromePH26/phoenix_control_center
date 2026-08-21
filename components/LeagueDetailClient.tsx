@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Button from "@/components/ui/Button";
@@ -9,10 +10,12 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import JsonViewer from "@/components/ui/JsonViewer";
 import StateMessage from "@/components/ui/StateMessage";
+import Tabs from "@/components/ui/Tabs";
 import AssetGallery from "@/components/AssetGallery";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
+import EntityCountsBlock from "@/components/EntityCountsBlock";
 import DataCoveragePanel from "@/components/DataCoveragePanel";
 import LeagueLearningPanel from "@/components/LeagueLearningPanel";
 import LeagueTeamsPanel from "@/components/LeagueTeamsPanel";
@@ -33,7 +36,7 @@ const GENDER_LABEL: Record<string, string> = { male: "Herren", female: "Damen" }
 const LEAGUE_KNOWN_KEYS = new Set([
   "leagueId", "name", "manualStatus", "league_id", "league_name", "manual_status",
   "country", "gender", "competition_level", "total_samples", "successful_full_analyses",
-  "historical_status", "last_seen_at", "seasons",
+  "historical_status", "last_seen_at", "seasons", "has_logo",
 ]);
 
 function levelLabel(level: unknown): string {
@@ -60,6 +63,7 @@ function formatDateTime(iso: string | null | undefined): string {
 }
 
 export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
+  const router = useRouter();
   const [league, setLeague] = useState<FootballLeague | null>(null);
   const [tips, setTips] = useState<FootballTip[]>([]);
   const [teams, setTeams] = useState<LeagueTeamRow[]>([]);
@@ -147,6 +151,18 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
   const uploadAsset: FootballAsset = { type: "league", id: leagueId, entityName: league?.name ?? leagueId, status: "OK" };
   const status = typeof league?.manualStatus === "string" ? (league.manualStatus as LeagueManualStatus) : undefined;
 
+  const tabs = [
+    { key: "overview", label: "Übersicht" },
+    { key: "performance", label: "Performance" },
+    { key: "markets", label: "Märkte" },
+    { key: "tips", label: "Tipps" },
+    { key: "teams", label: `Teams (${teams.length})` },
+    { key: "data", label: "Daten" },
+    { key: "learning", label: "Learning" },
+    { key: "assets", label: "Assets" },
+    { key: "technical", label: "Technische Details" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -157,10 +173,24 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
             { label: league?.name ?? leagueId },
           ]}
         />
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{league?.name ?? "Liga"}</h1>
+        <div className="mt-1 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-neutral-100 bg-neutral-50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageSrc}
+              alt=""
+              className="h-full w-full object-contain p-1"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+          <h1 className="text-xl font-semibold text-neutral-900">{league?.name ?? "Liga"}</h1>
+          {status && <Badge tone={statusTone(status)}>{STATUS_LABEL[status]}</Badge>}
+        </div>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <p className="text-sm text-neutral-400">Liga wird geladen…</p>}
       {state === "notfound" && <StateMessage title="Liga nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
       {state === "unreachable" && (
         <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
@@ -168,137 +198,151 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
       {state === "error" && <StateMessage title="Liga konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />}
 
       {state === "loaded" && league && (
-        <>
-          <Card
-            title="Übersicht"
-            action={
-              <div className="flex gap-1.5">
-                {STATUSES.map((s) => (
-                  <Button
-                    key={s}
-                    variant={status === s ? "primary" : "secondary"}
-                    disabled={status === s}
-                    onClick={() => {
-                      setPendingStatus(s);
-                      setError(null);
-                    }}
+        <Tabs tabs={tabs}>
+          {(active) => (
+            <>
+              {active === "overview" && (
+                <div className="space-y-6">
+                  <Card
+                    title="Basisdaten"
+                    action={
+                      <div className="flex gap-1.5">
+                        {STATUSES.map((s) => (
+                          <Button
+                            key={s}
+                            variant={status === s ? "primary" : "secondary"}
+                            disabled={status === s}
+                            onClick={() => {
+                              setPendingStatus(s);
+                              setError(null);
+                            }}
+                          >
+                            {STATUS_LABEL[s]}
+                          </Button>
+                        ))}
+                      </div>
+                    }
                   >
-                    {STATUS_LABEL[s]}
-                  </Button>
-                ))}
-              </div>
-            }
-          >
-            <div className="flex items-start gap-4">
-              <AssetGallery type="league" id={leagueId} imageSrc={imageSrc} entityName={league.name} onReplace={() => setShowUpload(true)} />
-              <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-                <div>
-                  <p className="text-neutral-500">Status</p>
-                  <p>
-                    <Badge tone={statusTone(status)}>{status ? STATUS_LABEL[status] : "–"}</Badge>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Land</p>
-                  <p className="font-medium text-neutral-900">{typeof league.country === "string" ? league.country : "–"}</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Wettbewerbsstufe</p>
-                  <p className="font-medium text-neutral-900">{levelLabel(league.competition_level)}</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Geschlecht</p>
-                  <p className="font-medium text-neutral-900">
-                    {typeof league.gender === "string" ? (GENDER_LABEL[league.gender] ?? league.gender) : "–"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Historie</p>
-                  <p className="font-medium text-neutral-900">
-                    {typeof league.historical_status === "string"
-                      ? (HISTORICAL_STATUS_LABEL[league.historical_status] ?? league.historical_status)
-                      : "–"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Analysierte Samples</p>
-                  <p className="font-medium text-neutral-900">
-                    {typeof league.total_samples === "number" ? league.total_samples : "0"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Zuletzt gesehen</p>
-                  <p className="font-medium text-neutral-900">{formatDateTime(league.last_seen_at as string | null | undefined)}</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Liga-ID</p>
-                  <p className="font-mono text-xs text-neutral-500">{league.leagueId}</p>
-                </div>
-              </div>
-            </div>
-            {Object.keys(league).some((k) => !LEAGUE_KNOWN_KEYS.has(k)) && (
-              <div className="mt-3">
-                <JsonViewer
-                  label="Technische Details"
-                  value={Object.fromEntries(Object.entries(league).filter(([k]) => !LEAGUE_KNOWN_KEYS.has(k)))}
-                />
-              </div>
-            )}
-          </Card>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                      <div>
+                        <p className="text-neutral-500">Status</p>
+                        <p>
+                          <Badge tone={statusTone(status)}>{status ? STATUS_LABEL[status] : "–"}</Badge>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-500">Land</p>
+                        <p className="font-medium text-neutral-900">{typeof league.country === "string" ? league.country : "–"}</p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-500">Wettbewerbsstufe</p>
+                        <p className="font-medium text-neutral-900">{levelLabel(league.competition_level)}</p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-500">Geschlecht</p>
+                        <p className="font-medium text-neutral-900">
+                          {typeof league.gender === "string" ? (GENDER_LABEL[league.gender] ?? league.gender) : "–"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-500">Historie</p>
+                        <p className="font-medium text-neutral-900">
+                          {typeof league.historical_status === "string"
+                            ? (HISTORICAL_STATUS_LABEL[league.historical_status] ?? league.historical_status)
+                            : "–"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-500">Zuletzt gesehen</p>
+                        <p className="font-medium text-neutral-900">{formatDateTime(league.last_seen_at as string | null | undefined)}</p>
+                      </div>
+                    </div>
+                  </Card>
 
-          <Card
-            title={
-              <span className="inline-flex items-center gap-1">
-                Performance
-                <InfoTooltip text="Wie gut PHÖNIX-Tipps in dieser Liga bisher abgeschnitten haben - aus denselben Daten wie die Tipps-Übersicht." />
-              </span>
-            }
-          >
-            <EntityPerformancePanel leagueId={leagueId} />
-          </Card>
+                  <Card
+                    title={
+                      <span className="inline-flex items-center gap-1">
+                        Auf einen Blick
+                        <InfoTooltip text="Echte Zähler aus der Datenbank - kein Zeitraumfilter, keine Begrenzung durch Seitenanzeige." />
+                      </span>
+                    }
+                  >
+                    <EntityCountsBlock leagueId={leagueId} />
+                  </Card>
+                </div>
+              )}
 
-          <Card
-            title={
-              <span className="inline-flex items-center gap-1">
-                Daten
-                <InfoTooltip text="Was hat PHÖNIX tatsächlich über diese Liga gespeichert - je Datenkategorie über alle gescannten Spiele." />
-              </span>
-            }
-          >
-            <DataCoveragePanel leagueId={leagueId} />
-          </Card>
+              {active === "performance" && (
+                <Card>
+                  <EntityPerformancePanel leagueId={leagueId} mode="performance" />
+                </Card>
+              )}
 
-          <Card
-            title={
-              <span className="inline-flex items-center gap-1">
-                Learning
-                <InfoTooltip text="Champion/Herausforderer-Status je Markt aus dem Model Lab - rein informativ, ein Wechsel wird nie von hier aus ausgelöst." />
-              </span>
-            }
-          >
-            <LeagueLearningPanel leagueId={leagueId} />
-          </Card>
+              {active === "markets" && (
+                <Card>
+                  <EntityPerformancePanel leagueId={leagueId} mode="markets" />
+                </Card>
+              )}
 
-          <Card
-            title={
-              <span className="inline-flex items-center gap-1">
-                Teams ({teams.length})
-                <InfoTooltip text="Alle Teams dieser Liga mit gespeicherten Spielen, PHÖNIX-Analysen und Performance." />
-              </span>
-            }
-          >
-            <LeagueTeamsPanel teams={teams} />
-          </Card>
+              {active === "tips" && (
+                <Card title="Alle Analysen">
+                  <DataTable
+                    columns={columns}
+                    rows={tips}
+                    rowKey={(t) => `${t.phase_two_scan_run_id}-${t.fixture_id}`}
+                    emptyMessage="Keine Analysen für diese Liga gefunden"
+                    onRowClick={(t) => router.push(`/football/matches/${encodeURIComponent(t.fixture_id)}`)}
+                  />
+                </Card>
+              )}
 
-          <Card title="Alle Analysen">
-            <DataTable
-              columns={columns}
-              rows={tips}
-              rowKey={(t) => `${t.phase_two_scan_run_id}-${t.fixture_id}`}
-              emptyMessage="Keine Analysen für diese Liga gefunden"
-            />
-          </Card>
-        </>
+              {active === "teams" && (
+                <Card>
+                  <LeagueTeamsPanel teams={teams} />
+                </Card>
+              )}
+
+              {active === "data" && (
+                <Card>
+                  <DataCoveragePanel leagueId={leagueId} />
+                </Card>
+              )}
+
+              {active === "learning" && (
+                <Card>
+                  <LeagueLearningPanel leagueId={leagueId} />
+                </Card>
+              )}
+
+              {active === "assets" && (
+                <Card>
+                  <AssetGallery type="league" id={leagueId} imageSrc={imageSrc} entityName={league.name} onReplace={() => setShowUpload(true)} />
+                </Card>
+              )}
+
+              {active === "technical" && (
+                <Card title="Technische Details">
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-neutral-500">Liga-ID</p>
+                      <p className="font-mono text-xs text-neutral-500">{league.leagueId}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-500">Analysierte Samples (Legacy-Zähler)</p>
+                      <p className="font-medium text-neutral-900">{typeof league.total_samples === "number" ? league.total_samples : "0"}</p>
+                    </div>
+                    {Object.keys(league).some((k) => !LEAGUE_KNOWN_KEYS.has(k)) && (
+                      <JsonViewer
+                        label="Weitere Rohdaten"
+                        value={Object.fromEntries(Object.entries(league).filter(([k]) => !LEAGUE_KNOWN_KEYS.has(k)))}
+                      />
+                    )}
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </Tabs>
       )}
 
       {showUpload && (

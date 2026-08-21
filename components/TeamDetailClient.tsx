@@ -1,16 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import Badge from "@/components/ui/Badge";
+import Tabs from "@/components/ui/Tabs";
 import AssetGallery from "@/components/AssetGallery";
 import UploadAssetModal from "@/components/UploadAssetModal";
 import EntityPerformancePanel from "@/components/EntityPerformancePanel";
+import EntityCountsBlock from "@/components/EntityCountsBlock";
 import DataCoveragePanel from "@/components/DataCoveragePanel";
+import TeamMatchesPanel from "@/components/TeamMatchesPanel";
 import type { FootballAsset, FootballTeamProfile, FootballTip } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -30,6 +34,7 @@ function formatDateTime(iso: string | null | undefined): string {
 }
 
 export default function TeamDetailClient({ teamId }: { teamId: string }) {
+  const router = useRouter();
   const [team, setTeam] = useState<FootballTeamProfile | null>(null);
   const [tips, setTips] = useState<FootballTip[]>([]);
   const [state, setState] = useState<LoadState>("loading");
@@ -88,6 +93,17 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
     status: "OK",
   };
 
+  const tabs = [
+    { key: "overview", label: "Übersicht" },
+    { key: "performance", label: "Performance" },
+    { key: "markets", label: "Märkte" },
+    { key: "matches", label: "Spiele" },
+    { key: "tips", label: "Tipps" },
+    { key: "data", label: "Daten" },
+    { key: "assets", label: "Assets" },
+    { key: "technical", label: "Technische Details" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -100,10 +116,25 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
             { label: team?.name ?? teamId },
           ]}
         />
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{team?.name ?? "Team"}</h1>
+        <div className="mt-1 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-neutral-100 bg-neutral-50">
+            {imageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageSrc}
+                alt=""
+                className="h-full w-full object-contain p-1"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : null}
+          </div>
+          <h1 className="text-xl font-semibold text-neutral-900">{team?.name ?? "Team"}</h1>
+        </div>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <p className="text-sm text-neutral-400">Team wird geladen…</p>}
       {state === "notfound" && <StateMessage title="Team nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
       {state === "unreachable" && (
         <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
@@ -111,58 +142,90 @@ export default function TeamDetailClient({ teamId }: { teamId: string }) {
       {state === "error" && <StateMessage title="Team konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />}
 
       {state === "loaded" && team && (
-        <>
-          <Card title="Übersicht">
-            <div className="flex items-start gap-4">
-              <AssetGallery type="team" id={teamId} imageSrc={imageSrc} entityName={team.name} onReplace={() => setShowUpload(true)} />
-              <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-                <div>
-                  <p className="text-neutral-500">Land</p>
-                  <p className="font-medium text-neutral-900">{team.country || "–"}</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Liga</p>
-                  <p className="font-medium text-neutral-900">{team.league_name || "–"}</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500">Team-ID</p>
-                  <p className="font-mono text-xs text-neutral-500">{team.id}</p>
-                </div>
-              </div>
-            </div>
-          </Card>
+        <Tabs tabs={tabs}>
+          {(active) => (
+            <>
+              {active === "overview" && (
+                <div className="space-y-6">
+                  <Card title="Basisdaten">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                      <div>
+                        <p className="text-neutral-500">Land</p>
+                        <p className="font-medium text-neutral-900">{team.country || "–"}</p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-500">Liga</p>
+                        <p className="font-medium text-neutral-900">{team.league_name || "–"}</p>
+                      </div>
+                    </div>
+                  </Card>
 
-          <Card
-            title={
-              <span className="inline-flex items-center gap-1">
-                Performance
-                <InfoTooltip text="Wie gut PHÖNIX-Tipps bei Spielen mit diesem Team bisher abgeschnitten haben - aus denselben Daten wie die Tipps-Übersicht." />
-              </span>
-            }
-          >
-            <EntityPerformancePanel teamId={teamId} />
-          </Card>
+                  <Card
+                    title={
+                      <span className="inline-flex items-center gap-1">
+                        Auf einen Blick
+                        <InfoTooltip text="Echte Zähler aus der Datenbank - kein Zeitraumfilter, keine Begrenzung durch Seitenanzeige." />
+                      </span>
+                    }
+                  >
+                    <EntityCountsBlock teamId={teamId} />
+                  </Card>
+                </div>
+              )}
 
-          <Card
-            title={
-              <span className="inline-flex items-center gap-1">
-                Daten
-                <InfoTooltip text="Was hat PHÖNIX tatsächlich über dieses Team gespeichert - je Datenkategorie über alle gescannten Spiele." />
-              </span>
-            }
-          >
-            <DataCoveragePanel teamId={teamId} />
-          </Card>
+              {active === "performance" && (
+                <Card>
+                  <EntityPerformancePanel teamId={teamId} mode="performance" />
+                </Card>
+              )}
 
-          <Card title="Alle Analysen">
-            <DataTable
-              columns={columns}
-              rows={tips}
-              rowKey={(t) => `${t.phase_two_scan_run_id}-${t.fixture_id}`}
-              emptyMessage="Keine Analysen für dieses Team gefunden"
-            />
-          </Card>
-        </>
+              {active === "markets" && (
+                <Card>
+                  <EntityPerformancePanel teamId={teamId} mode="markets" />
+                </Card>
+              )}
+
+              {active === "matches" && (
+                <Card>
+                  <TeamMatchesPanel teamId={teamId} />
+                </Card>
+              )}
+
+              {active === "tips" && (
+                <Card title="Alle Analysen">
+                  <DataTable
+                    columns={columns}
+                    rows={tips}
+                    rowKey={(t) => `${t.phase_two_scan_run_id}-${t.fixture_id}`}
+                    emptyMessage="Keine Analysen für dieses Team gefunden"
+                    onRowClick={(t) => router.push(`/football/matches/${encodeURIComponent(t.fixture_id)}`)}
+                  />
+                </Card>
+              )}
+
+              {active === "data" && (
+                <Card>
+                  <DataCoveragePanel teamId={teamId} />
+                </Card>
+              )}
+
+              {active === "assets" && (
+                <Card>
+                  <AssetGallery type="team" id={teamId} imageSrc={imageSrc} entityName={team.name} onReplace={() => setShowUpload(true)} />
+                </Card>
+              )}
+
+              {active === "technical" && (
+                <Card title="Technische Details">
+                  <div>
+                    <p className="text-neutral-500">Team-ID</p>
+                    <p className="font-mono text-xs text-neutral-500">{team.id}</p>
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </Tabs>
       )}
 
       {showUpload && (
