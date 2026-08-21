@@ -223,6 +223,7 @@ export default function EntityPerformancePanel({
 
   if (focusedMarket && marketData) {
     const fSummary = marketData.summary;
+    const focusedMarketLabel = data?.byMarket?.find((m) => m.marketKey === focusedMarket)?.marketLabel ?? marketLabel(focusedMarket);
     return (
       <div className="space-y-4">
         <button
@@ -232,7 +233,7 @@ export default function EntityPerformancePanel({
         >
           ← Zurück zur Marktübersicht
         </button>
-        <h3 className="text-lg font-semibold text-neutral-900">{marketLabel(focusedMarket)}</h3>
+        <h3 className="text-lg font-semibold text-neutral-900">{focusedMarketLabel}</h3>
         <KpiGrid summary={fSummary} isSmallSample={fSummary.won + fSummary.lost < SMALL_SAMPLE_THRESHOLD} />
         <MetricSelect metric={metric} onChange={setMetric} />
         <Chart series={marketData.timeSeries ?? []} metric={metric} />
@@ -372,7 +373,7 @@ export default function EntityPerformancePanel({
                         onClick={() => setFocusedMarket(m.marketKey)}
                         className="cursor-pointer hover:bg-neutral-50"
                       >
-                        <td className="py-2 pr-4 font-medium text-neutral-900">{marketLabel(m.marketKey)}</td>
+                        <td className="py-2 pr-4 font-medium text-neutral-900">{m.marketLabel || marketLabel(m.marketKey)}</td>
                         <td className="py-2 pr-4">
                           {m.hitRatePercent === null ? (
                             "–"
