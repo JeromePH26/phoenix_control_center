@@ -7,6 +7,12 @@ import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
 import type { SystemHealth } from "@/lib/types";
 
+const APP_STATUS_LABEL: Record<string, string> = {
+  ACTIVE: "Aktiv",
+  MAINTENANCE: "Wartungsmodus",
+  DISABLED: "Abgeschaltet",
+};
+
 function Tile({ label, value, tone, href }: { label: string; value: string | number; tone: "red" | "gold" | "green" | "neutral"; href?: string }) {
   const toneClasses: Record<string, string> = {
     red: "border-red-200 bg-red-50",
@@ -97,7 +103,7 @@ export default async function OperationsPage() {
           />
           <Tile
             label="App-Status"
-            value={health.appStatus.status as string}
+            value={APP_STATUS_LABEL[health.appStatus.status as string] ?? (health.appStatus.status as string)}
             tone={health.appStatus.status === "ACTIVE" ? "green" : "red"}
             href="/app-control/status"
           />
