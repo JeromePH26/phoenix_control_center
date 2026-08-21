@@ -42,8 +42,11 @@ export default function FootballSettlementClient() {
   const [batchSize, setBatchSize] = useState(25);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [candidateCount, setCandidateCount] = useState<number | null>(null);
+  const [candidateLoading, setCandidateLoading] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isRunning = jobs.some((j) => j.status === "running");
 
   const loadCoverage = useCallback(async () => {
     setCoverageState("loading");
@@ -107,6 +110,28 @@ export default function FootballSettlementClient() {
       pollRef.current = setInterval(loadJobs, POLL_INTERVAL_MS);
     }
   }, [jobs, loadJobs]);
+
+  // Section 11: "Vor Start Kandidatenzahl ... zeigen" - lädt neu, sobald der
+  // Min-Stunden-Wert sich ändert, damit die Vorschau immer zum aktuellen
+  // Formularwert passt.
+  useEffect(() => {
+    let cancelled = false;
+    setCandidateLoading(true);
+    fetch(`/api/football/settlement/candidates?minHoursSinceKickoff=${minHours}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setCandidateCount(typeof data?.candidateCount === "number" ? data.candidateCount : null);
+      })
+      .catch(() => {
+        if (!cancelled) setCandidateCount(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCandidateLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [minHours]);
 
   async function handleStart() {
     setStarting(true);
@@ -208,10 +233,22 @@ export default function FootballSettlementClient() {
               className="w-32 rounded-md border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
             />
           </label>
-          <Button onClick={handleStart} disabled={starting}>
-            {starting ? "Wird gestartet…" : "Backfill starten"}
+          <Button onClick={handleStart} disabled={starting || isRunning}>
+            {starting ? "Wird gestartet…" : isRunning ? "Läuft bereits…" : "Backfill starten"}
           </Button>
         </div>
+        <p className="mt-3 text-xs text-neutral-500">
+          {candidateLoading
+            ? "Kandidatenzahl wird ermittelt…"
+            : candidateCount == null
+              ? "Kandidatenzahl konnte nicht ermittelt werden."
+              : candidateCount === 0
+                ? "Keine überfälligen Spiele für diese Einstellung."
+                : `${candidateCount} Spiele würden geprüft (max. ${Math.min(candidateCount, batchSize)} im ersten Batch) - geschätzt ~${Math.min(candidateCount, batchSize)} Anfragen an den Datenanbieter, bevor der nächste Batch startet.`}
+        </p>
+        {isRunning && (
+          <p className="mt-1 text-xs text-amber-600">Ein Backfill-Lauf ist bereits aktiv - ein neuer Lauf kann erst nach dessen Abschluss gestartet werden.</p>
+        )}
         {startError && (
           <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
             {startError}
