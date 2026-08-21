@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import EntityAutocomplete, { AutocompleteOption } from "@/components/ui/EntityAutocomplete";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
+import Pagination from "@/components/ui/Pagination";
 import StateMessage from "@/components/ui/StateMessage";
-import type { FootballMatch } from "@/lib/types";
+import type { FootballLeague, FootballMatch, FootballTeamProfile } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
 
@@ -37,6 +39,15 @@ const MATCH_STATUS_LABEL: Record<string, string> = {
 };
 function matchStatusLabel(status: string): string {
   return MATCH_STATUS_LABEL[status] ?? status;
+}
+
+function formatUpdatedAt(iso: string | null | undefined): string {
+  if (!iso) return "–";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "–";
+  const datePart = date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+  const timePart = date.toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+  return `${datePart} · ${timePart} Uhr`;
 }
 
 const inputClass =
@@ -73,16 +84,20 @@ export default function FootballMatchesClient() {
 
   const date = searchParams.get("date") ?? "";
   const leagueId = searchParams.get("leagueId") ?? "";
+  const leagueName = searchParams.get("leagueName") ?? "";
   const teamId = searchParams.get("teamId") ?? "";
+  const teamName = searchParams.get("teamName") ?? "";
   const status = searchParams.get("status") ?? "";
   const visible = searchParams.get("visible") ?? "";
   const hasAnalysis = searchParams.get("hasAnalysis") ?? "";
+  const hasTip = searchParams.get("hasTip") ?? "";
   const settled = searchParams.get("settled") ?? "";
   const offset = Number(searchParams.get("offset") ?? "0") || 0;
 
   const [matches, setMatches] = useState<FootballMatch[]>([]);
   const [count, setCount] = useState<number | null>(null);
   const [state, setState] = useState<LoadState>("loading");
+  const allLeaguesRef = useRef<FootballLeague[] | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -93,6 +108,7 @@ export default function FootballMatchesClient() {
     if (status) qs.set("status", status);
     if (visible) qs.set("visible", visible);
     if (hasAnalysis) qs.set("hasAnalysis", hasAnalysis);
+    if (hasTip) qs.set("hasTip", hasTip);
     if (settled) qs.set("settled", settled);
     qs.set("limit", String(PAGE_SIZE));
     qs.set("offset", String(offset));
@@ -115,11 +131,50 @@ export default function FootballMatchesClient() {
     } catch {
       setState("unreachable");
     }
-  }, [date, leagueId, teamId, status, visible, hasAnalysis, settled, offset]);
+  }, [date, leagueId, teamId, status, visible, hasAnalysis, hasTip, settled, offset]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Section 6: Liga-Suche mit Namen statt ID - die vollständige Ligaliste ist
+  // klein genug, um einmal zu laden und clientseitig zu filtern (dieselbe
+  // Liste, die auch die Ligen-Hauptseite nutzt).
+  async function searchLeagues(query: string): Promise<AutocompleteOption[]> {
+    if (!allLeaguesRef.current) {
+      const res = await fetch("/api/football/leagues");
+      const data = await res.json().catch(() => null);
+      allLeaguesRef.current = Array.isArray(data) ? data : (data?.leagues ?? []);
+    }
+    const q = query.toLowerCase();
+    return (allLeaguesRef.current ?? [])
+      .filter((l) => (l.name ?? "").toLowerCase().includes(q) || String(l.country ?? "").toLowerCase().includes(q))
+      .slice(0, 8)
+      .map((l) => ({ id: l.leagueId, label: l.name ?? l.leagueId, sublabel: typeof l.country === "string" ? l.country : undefined }));
+  }
+
+  // Section 6: Team-Suche mit Namen und Wappen - serverseitig, da die
+  // Teamliste (mehrere Tausend Einträge) zu groß für einen einmaligen
+  // Client-Fetch ist.
+  async function searchTeams(query: string): Promise<AutocompleteOption[]> {
+    const res = await fetch(`/api/football/teams?search=${encodeURIComponent(query)}&limit=8`);
+    const data = await res.json().catch(() => null);
+    const teams: FootballTeamProfile[] = Array.isArray(data) ? data : (data?.teams ?? []);
+    return teams.map((t) => ({ id: t.id, label: t.name, sublabel: t.league_name ?? undefined, logoUrl: t.logo }));
+  }
+
+  function updateEntityParam(idKey: string, nameKey: string, id: string | null, name: string | null) {
+    const qs = new URLSearchParams(searchParams.toString());
+    if (id) {
+      qs.set(idKey, id);
+      qs.set(nameKey, name ?? "");
+    } else {
+      qs.delete(idKey);
+      qs.delete(nameKey);
+    }
+    qs.delete("offset");
+    router.replace(`/football/matches${qs.toString() ? `?${qs.toString()}` : ""}`);
+  }
 
   function updateParam(key: string, value: string) {
     const qs = new URLSearchParams(searchParams.toString());
@@ -160,6 +215,15 @@ export default function FootballMatchesClient() {
       info: "Ob PHÖNIX für dieses Spiel bereits eine Analyse (Vorhersage/Tipp) erstellt hat.",
       cell: (m) => <Badge tone={m.hasAnalysis ? "green" : "neutral"}>{m.hasAnalysis ? "Ja" : "Nein"}</Badge>,
     },
+    {
+      header: "Top-Tipp",
+      info: "Der zuletzt veröffentlichte PHÖNIX-Tipp für dieses Spiel, falls vorhanden.",
+      cell: (m) => (m.topTip ? <Badge tone="gold">{m.topTip.marketLabel}</Badge> : "–"),
+    },
+    {
+      header: "Letzte Aktualisierung",
+      cell: (m) => <span className="whitespace-nowrap text-neutral-500">{formatUpdatedAt(m.updatedAt)}</span>,
+    },
   ];
 
   return (
@@ -187,34 +251,24 @@ export default function FootballMatchesClient() {
             onChange={(e) => updateParam("date", e.target.value)}
           />
         </div>
-        <div>
-          <label htmlFor="leagueId" className="mb-1 block text-xs font-medium text-neutral-600">
-            Liga-ID
-          </label>
-          <input
-            id="leagueId"
-            defaultValue={leagueId}
-            className={inputClass}
-            onBlur={(e) => updateParam("leagueId", e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") updateParam("leagueId", (e.target as HTMLInputElement).value);
-            }}
-          />
-        </div>
-        <div>
-          <label htmlFor="teamId" className="mb-1 block text-xs font-medium text-neutral-600">
-            Team-ID
-          </label>
-          <input
-            id="teamId"
-            defaultValue={teamId}
-            className={inputClass}
-            onBlur={(e) => updateParam("teamId", e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") updateParam("teamId", (e.target as HTMLInputElement).value);
-            }}
-          />
-        </div>
+        <EntityAutocomplete
+          id="leagueId"
+          label="Liga"
+          placeholder="Liga suchen…"
+          selectedLabel={leagueId ? leagueName || leagueId : null}
+          onSearch={searchLeagues}
+          onSelect={(o) => updateEntityParam("leagueId", "leagueName", o.id, o.label)}
+          onClear={() => updateEntityParam("leagueId", "leagueName", null, null)}
+        />
+        <EntityAutocomplete
+          id="teamId"
+          label="Team"
+          placeholder="Team suchen…"
+          selectedLabel={teamId ? teamName || teamId : null}
+          onSearch={searchTeams}
+          onSelect={(o) => updateEntityParam("teamId", "teamName", o.id, o.label)}
+          onClear={() => updateEntityParam("teamId", "teamName", null, null)}
+        />
         <div>
           <label htmlFor="status" className="mb-1 block text-xs font-medium text-neutral-600">
             Status
@@ -235,19 +289,21 @@ export default function FootballMatchesClient() {
           value={hasAnalysis}
           onChange={(v) => updateParam("hasAnalysis", v)}
         />
+        <BoolSelect id="hasTip" label="Tipp vorhanden" value={hasTip} onChange={(v) => updateParam("hasTip", v)} />
         <BoolSelect id="settled" label="Settled (abgerechnet)" value={settled} onChange={(v) => updateParam("settled", v)} />
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "unreachable" && (
           <StateMessage
             title="PHÖNIX Backend nicht erreichbar"
             description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
           />
         )}
         {state === "error" && (
-          <StateMessage title="Matches konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Matches konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <>
@@ -258,29 +314,7 @@ export default function FootballMatchesClient() {
               emptyMessage="Keine Matches gefunden"
               onRowClick={(m) => router.push(`/football/matches/${encodeURIComponent(m.id)}`)}
             />
-            {matches.length > 0 && (
-              <div className="mt-3 flex items-center justify-between text-xs text-neutral-400">
-                <span>
-                  {count != null ? `${offset + 1}–${offset + matches.length} von ${count}` : `${matches.length} Einträge`}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    disabled={offset === 0}
-                    onClick={() => goToOffset(Math.max(0, offset - PAGE_SIZE))}
-                  >
-                    Zurück
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    disabled={matches.length < PAGE_SIZE}
-                    onClick={() => goToOffset(offset + PAGE_SIZE)}
-                  >
-                    Weiter
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Pagination offset={offset} limit={PAGE_SIZE} count={matches.length} total={count} onOffsetChange={goToOffset} />
           </>
         )}
       </Card>

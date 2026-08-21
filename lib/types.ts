@@ -177,6 +177,8 @@ export interface FootballMatch {
   learningEnabled?: boolean | null;
   liveEnabled?: boolean | null;
   hasAnalysis?: boolean | null;
+  updatedAt?: string | null;
+  topTip?: { marketKey: string; marketLabel: string } | null;
   [key: string]: unknown;
 }
 
