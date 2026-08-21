@@ -74,10 +74,22 @@ export default function FootballLeaguesClient() {
   const [leagues, setLeagues] = useState<FootballLeague[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [pending, setPending] = useState<{ league: FootballLeague; status: LeagueManualStatus } | null>(null);
+  const [pendingReason, setPendingReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [logoFilter, setLogoFilter] = useState<"" | "present" | "missing">("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | LeagueManualStatus>("");
+  const [sortBy, setSortBy] = useState<"name" | "country" | "lastSeen" | "samples">("name");
+
+  const countries = useMemo(() => {
+    const set = new Set<string>();
+    for (const l of leagues) {
+      if (typeof l.country === "string" && l.country) set.add(l.country);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "de"));
+  }, [leagues]);
 
   const filteredLeagues = useMemo(() => {
     let rows = leagues;
@@ -89,8 +101,18 @@ export default function FootballLeaguesClient() {
     }
     if (logoFilter === "present") rows = rows.filter((l) => l.has_logo === true);
     if (logoFilter === "missing") rows = rows.filter((l) => l.has_logo !== true);
-    return rows;
-  }, [leagues, search, logoFilter]);
+    if (countryFilter) rows = rows.filter((l) => l.country === countryFilter);
+    if (statusFilter) rows = rows.filter((l) => l.manualStatus === statusFilter);
+
+    const sorted = [...rows];
+    sorted.sort((a, b) => {
+      if (sortBy === "country") return String(a.country ?? "").localeCompare(String(b.country ?? ""), "de");
+      if (sortBy === "lastSeen") return String(b.last_seen_at ?? "").localeCompare(String(a.last_seen_at ?? ""));
+      if (sortBy === "samples") return (Number(b.total_samples) || 0) - (Number(a.total_samples) || 0);
+      return (a.name ?? a.leagueId).localeCompare(b.name ?? b.leagueId, "de");
+    });
+    return sorted;
+  }, [leagues, search, logoFilter, countryFilter, statusFilter, sortBy]);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -124,7 +146,7 @@ export default function FootballLeaguesClient() {
       const res = await fetch(`/api/football/leagues/${encodeURIComponent(pending.league.leagueId)}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: pending.status }),
+        body: JSON.stringify({ status: pending.status, reason: pendingReason }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -132,6 +154,7 @@ export default function FootballLeaguesClient() {
         return;
       }
       setPending(null);
+      setPendingReason("");
       load();
     } catch {
       setError("Verbindung zum Backend fehlgeschlagen.");
@@ -238,6 +261,58 @@ export default function FootballLeaguesClient() {
             <option value="missing">Fehlt</option>
           </select>
         </div>
+        <div>
+          <label htmlFor="league-country-filter" className="mb-1 block text-xs font-medium text-neutral-600">
+            Land
+          </label>
+          <select
+            id="league-country-filter"
+            value={countryFilter}
+            onChange={(e) => setCountryFilter(e.target.value)}
+            className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
+          >
+            <option value="">Alle</option>
+            {countries.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="league-status-filter" className="mb-1 block text-xs font-medium text-neutral-600">
+            Status
+          </label>
+          <select
+            id="league-status-filter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as "" | LeagueManualStatus)}
+            className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
+          >
+            <option value="">Alle</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="league-sort" className="mb-1 block text-xs font-medium text-neutral-600">
+            Sortierung
+          </label>
+          <select
+            id="league-sort"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "name" | "country" | "lastSeen" | "samples")}
+            className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
+          >
+            <option value="name">Name</option>
+            <option value="country">Land</option>
+            <option value="lastSeen">Zuletzt gesehen</option>
+            <option value="samples">Analysierte Samples</option>
+          </select>
+        </div>
       </div>
 
       <Card>
@@ -270,7 +345,13 @@ export default function FootballLeaguesClient() {
           busy={busy}
           error={error}
           onConfirm={handleConfirm}
-          onClose={() => setPending(null)}
+          onClose={() => {
+            setPending(null);
+            setPendingReason("");
+          }}
+          reason={pendingReason}
+          onReasonChange={setPendingReason}
+          reasonRequired
         />
       )}
     </div>

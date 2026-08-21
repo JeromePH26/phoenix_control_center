@@ -71,6 +71,7 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
   const [showUpload, setShowUpload] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
   const [pendingStatus, setPendingStatus] = useState<LeagueManualStatus | null>(null);
+  const [pendingReason, setPendingReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,7 +125,7 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
       const res = await fetch(`/api/football/leagues/${encodeURIComponent(leagueId)}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: pendingStatus }),
+        body: JSON.stringify({ status: pendingStatus, reason: pendingReason }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -132,6 +133,7 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
         return;
       }
       setPendingStatus(null);
+      setPendingReason("");
       load();
     } catch {
       setError("Verbindung zum Backend fehlgeschlagen.");
@@ -364,7 +366,13 @@ export default function LeagueDetailClient({ leagueId }: { leagueId: string }) {
           busy={busy}
           error={error}
           onConfirm={handleStatusConfirm}
-          onClose={() => setPendingStatus(null)}
+          onClose={() => {
+            setPendingStatus(null);
+            setPendingReason("");
+          }}
+          reason={pendingReason}
+          onReasonChange={setPendingReason}
+          reasonRequired
         />
       )}
     </div>

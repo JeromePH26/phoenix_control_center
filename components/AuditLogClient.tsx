@@ -115,6 +115,7 @@ const ACTION_LABEL: Record<string, string> = {
   "flag.update": "Feature Flag geändert",
   "incident.create": "Incident erstellt",
   "incident.update": "Incident geändert",
+  "league.status_change": "Liga-Status geändert",
   "match.flags_update": "Spiel-Einstellungen geändert",
   "match.status_override": "Spielstatus manuell gesetzt",
   "match.status_override_clear": "Manuelle Status-Sperre aufgehoben",

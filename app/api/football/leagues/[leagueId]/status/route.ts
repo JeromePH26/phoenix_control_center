@@ -10,7 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: { leagueId: s
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
-  let body: { status?: unknown };
+  let body: { status?: unknown; reason?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -20,12 +20,16 @@ export async function POST(req: NextRequest, { params }: { params: { leagueId: s
   if (!value) {
     return NextResponse.json({ error: "status ist erforderlich." }, { status: 400 });
   }
+  const reason = typeof body?.reason === "string" ? body.reason : "";
+  if (!reason.trim()) {
+    return NextResponse.json({ error: "reason ist erforderlich." }, { status: 400 });
+  }
 
   try {
-    // Backend reads this from a query parameter (`value`), not a JSON body -
+    // Backend reads these from query parameters, not a JSON body -
     // pre-existing legacy endpoint contract, adapted here.
     const res = await legacyBackendFetch(
-      `/football/leagues/${encodeURIComponent(params.leagueId)}/status?value=${encodeURIComponent(value)}`,
+      `/football/leagues/${encodeURIComponent(params.leagueId)}/status?value=${encodeURIComponent(value)}&reason=${encodeURIComponent(reason)}`,
       { method: "POST" },
     );
     const data = await safeJson(res);
