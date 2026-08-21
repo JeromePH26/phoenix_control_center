@@ -56,8 +56,10 @@ export interface LoginResponse {
 
 export interface AuditLogEntry {
   id: string;
-  employeeId: string;
+  employeeId: string | null;
   employeeLogin: string;
+  employeeName: string;
+  employeeRole: string | null;
   area: string;
   objectType: string;
   objectId: string;
@@ -66,20 +68,52 @@ export interface AuditLogEntry {
   newValue: unknown;
   reason: string | null;
   comment: string | null;
+  ip: string | null;
   createdAt: string;
   reverted: boolean;
+  revertedAt: string | null;
+}
+
+export interface JobStatusCounts {
+  running: number;
+  failed24h: number;
+  completed24h: number;
 }
 
 export interface OverviewPayload {
-  apiUsage?: Record<string, unknown> | null;
+  apiUsage?: ApiUsageRow[] | null;
   whitelist?: {
     auto?: number | null;
     whitelist?: number | null;
     blacklist?: number | null;
     [key: string]: unknown;
   } | null;
-  modelLab?: Record<string, unknown> | null;
-  pendingJobs?: Record<string, unknown> | null;
+  modelLab?: {
+    whitelistLeagues?: number | null;
+    activeChampions?: number | null;
+    activeChallengers?: number | null;
+    shadowPredictions?: number | null;
+    learningEligibleMatches?: number | null;
+    lastLearningRun?: {
+      status?: string | null;
+      started_at?: string | null;
+      completed_at?: string | null;
+      trigger_type?: string | null;
+      leagues_processed?: number | null;
+      markets_processed?: number | null;
+      eligible_matches?: number | null;
+      excluded_matches?: number | null;
+      challengers_created?: number | null;
+    } | null;
+    [key: string]: unknown;
+  } | null;
+  pendingJobs?: {
+    dailyPipeline?: JobStatusCounts | null;
+    settlement?: JobStatusCounts | null;
+  } | null;
+  warnings?: {
+    missingLeagueLogos?: number | null;
+  } | null;
   footballToday?: {
     scheduledMatches?: number | null;
     newAnalysesToday?: number | null;

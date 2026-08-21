@@ -42,7 +42,11 @@ export default async function OperationsPage() {
     errorState = "unreachable";
   }
 
-  const maxApiUsage = health ? Math.max(0, ...health.apiUsage.map((r) => (r.requests as number) ?? 0)) : 0;
+  // Section 5/25: `requests` ist eine rohe Anfragen-Anzahl, kein Prozentwert
+  // - es gibt aktuell kein reales Tageslimit in der Datenbank, gegen das man
+  // rechnen könnte (siehe Section 25, noch nicht gebaut). Die Kachel zeigt
+  // deshalb ehrlich die Anzahl statt eine erfundene "%"-Zahl vorzutäuschen.
+  const maxApiRequests = health ? Math.max(0, ...health.apiUsage.map((r) => (r.requests as number) ?? 0)) : 0;
   const pendingJobsTotal = health ? health.pendingJobs.footballDailyPipeline + health.pendingJobs.footballMatchSettlement : 0;
 
   return (
@@ -86,9 +90,9 @@ export default async function OperationsPage() {
             href="/infrastructure/jobs"
           />
           <Tile
-            label="API Usage (max)"
-            value={`${maxApiUsage}%`}
-            tone={maxApiUsage >= 95 ? "red" : maxApiUsage >= 85 ? "gold" : "green"}
+            label="API-Anfragen heute (höchste Quelle)"
+            value={maxApiRequests}
+            tone="neutral"
             href="/infrastructure/api-usage"
           />
           <Tile
@@ -101,7 +105,7 @@ export default async function OperationsPage() {
         </div>
       )}
 
-      {!errorState && health && health.openIncidentCount === 0 && health.openTicketCount === 0 && pendingJobsTotal === 0 && maxApiUsage < 85 && (
+      {!errorState && health && health.openIncidentCount === 0 && health.openTicketCount === 0 && pendingJobsTotal === 0 && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
           <Badge tone="green">Alles im grünen Bereich</Badge>
         </div>
