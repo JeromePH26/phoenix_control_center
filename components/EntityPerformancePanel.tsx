@@ -120,7 +120,11 @@ export default function EntityPerformancePanel({
   const [data, setData] = useState<PerformanceAggregateResponse | null>(null);
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
 
-  const { from, to } = periodRange(period, customFrom, customTo);
+  // periodRange() calls `new Date()` internally, so it must be memoized -
+  // recomputing it every render produces a new from/to string each time,
+  // which (via load's dependency array below) retriggers the load effect
+  // every render and floods the backend with requests indefinitely.
+  const { from, to } = useMemo(() => periodRange(period, customFrom, customTo), [period, customFrom, customTo]);
 
   const load = useCallback(async () => {
     setState("loading");
