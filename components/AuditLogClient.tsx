@@ -3,23 +3,30 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
-import JsonViewer from "@/components/ui/JsonViewer";
+import LoadingState from "@/components/ui/LoadingState";
+import Modal from "@/components/ui/Modal";
+import Pagination from "@/components/ui/Pagination";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AuditLogEntry } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "forbidden" | "unreachable" | "error";
 
+const PAGE_SIZE = 50;
+
 const AREA_LABEL: Record<string, string> = {
   employees: "Mitarbeiter",
+  administration: "Administration",
   audit: "Audit Log",
   search: "Suche",
   overview: "Übersicht",
   apiUsage: "API-Nutzung",
   jobs: "Jobs",
   appControl: "App-Steuerung",
+  app_control: "App-Steuerung",
   devices: "Geräte",
   support: "Support-Tickets",
   news: "News",
@@ -34,6 +41,7 @@ const AREA_LABEL: Record<string, string> = {
   incidents: "Incidents",
   security: "Security",
   moduleControl: "Module",
+  users: "Nutzer",
 };
 function areaLabel(area: string): string {
   if (AREA_LABEL[area]) return AREA_LABEL[area];
@@ -52,14 +60,43 @@ const OBJECT_TYPE_LABEL: Record<string, string> = {
   feature: "Premium-Funktion",
   flag: "Feature Flag",
   incident: "Incident",
+  league: "Liga",
   match: "Spiel",
+  model: "Modell",
   module: "Modul",
   session: "Session",
+  team: "Team",
   ticket: "Support-Ticket",
   user: "Nutzer",
 };
 function objectTypeLabel(objectType: string): string {
   return OBJECT_TYPE_LABEL[objectType] ?? objectType;
+}
+
+// Section 4: "Link zurück zum betroffenen Objekt, wenn verfügbar" - nur für
+// Objekttypen mit einer echten Detailroute, sonst kein Link (kein Rätselraten).
+function objectLink(objectType: string, objectId: string | null | undefined): string | null {
+  if (!objectId) return null;
+  switch (objectType) {
+    case "match":
+      return `/football/matches/${encodeURIComponent(objectId)}`;
+    case "team":
+      return `/football/teams/${encodeURIComponent(objectId)}`;
+    case "league":
+      return `/football/leagues/${encodeURIComponent(objectId)}`;
+    case "article":
+      return `/content/news/${encodeURIComponent(objectId)}`;
+    case "campaign":
+      return `/advertising/campaigns/${encodeURIComponent(objectId)}`;
+    case "ticket":
+      return `/support/tickets/${encodeURIComponent(objectId)}`;
+    case "user":
+      return `/users/accounts/${encodeURIComponent(objectId)}`;
+    case "model":
+      return `/model-lab/models/${encodeURIComponent(objectId)}`;
+    default:
+      return null;
+  }
 }
 
 const ACTION_LABEL: Record<string, string> = {
@@ -84,10 +121,10 @@ const ACTION_LABEL: Record<string, string> = {
   "module.toggle": "Modul umgeschaltet",
   "premium.manual_grant": "Premium manuell vergeben",
   "premium.manual_revoke": "Premium manuell entzogen",
-  "promotion": "Modell befördert",
-  "promotion_rejected": "Beförderung abgelehnt",
+  promotion: "Modell befördert",
+  promotion_rejected: "Beförderung abgelehnt",
   "release.update": "Release-Einstellungen geändert",
-  "rollback": "Modell zurückgesetzt",
+  rollback: "Modell zurückgesetzt",
   "session.revoke": "Session widerrufen",
   "ticket.update": "Support-Ticket geändert",
   "user.ban": "Nutzer gesperrt",
@@ -100,14 +137,29 @@ function actionLabel(action: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+const ROLE_LABEL: Record<string, string> = {
+  OWNER: "Owner",
+  ADMIN: "Admin",
+  TECHNICAL: "Technik",
+  SUPPORT: "Support",
+  CONTENT: "Content",
+  MARKETING: "Marketing",
+};
+
+// Section 4: "lokalisierte Zeit in Europe/Berlin" - explizit die Zielzone
+// angeben statt der Browser-Zeitzone des Admins zu vertrauen.
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "–";
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return `${date.toLocaleDateString("de-DE")} · ${date.toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })} Uhr`;
+  if (Number.isNaN(date.getTime())) return "–";
+  const datePart = date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+  const timePart = date.toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+  return `${datePart} · ${timePart} Uhr`;
+}
+
+function formatDiffValue(value: unknown): string {
+  if (value === null || value === undefined) return "–";
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 
 export default function AuditLogClient() {
@@ -116,16 +168,26 @@ export default function AuditLogClient() {
 
   const area = searchParams.get("area") ?? "";
   const employeeId = searchParams.get("employeeId") ?? "";
+  const action = searchParams.get("action") ?? "";
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
+  const offset = Number(searchParams.get("offset") ?? "0") || 0;
 
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [state, setState] = useState<LoadState>("loading");
+  const [diffEntry, setDiffEntry] = useState<AuditLogEntry | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
     const qs = new URLSearchParams();
     if (area) qs.set("area", area);
     if (employeeId) qs.set("employeeId", employeeId);
-    qs.set("limit", "100");
+    if (action) qs.set("action", action);
+    if (dateFrom) qs.set("dateFrom", new Date(dateFrom).toISOString());
+    if (dateTo) qs.set("dateTo", new Date(dateTo).toISOString());
+    qs.set("limit", String(PAGE_SIZE));
+    qs.set("offset", String(offset));
 
     try {
       const res = await fetch(`/api/audit-log?${qs.toString()}`);
@@ -142,12 +204,13 @@ export default function AuditLogClient() {
         return;
       }
       const data = await res.json();
-      setEntries(Array.isArray(data) ? data : data?.entries ?? []);
+      setEntries(Array.isArray(data) ? data : (data?.entries ?? []));
+      setTotal(typeof data?.total === "number" ? data.total : null);
       setState("loaded");
     } catch {
       setState("unreachable");
     }
-  }, [area, employeeId]);
+  }, [area, employeeId, action, dateFrom, dateTo, offset]);
 
   useEffect(() => {
     load();
@@ -157,22 +220,70 @@ export default function AuditLogClient() {
     const qs = new URLSearchParams(searchParams.toString());
     if (value) qs.set(key, value);
     else qs.delete(key);
+    qs.delete("offset");
     router.replace(`/administration/audit-log${qs.toString() ? `?${qs.toString()}` : ""}`);
   }
 
+  function goToOffset(next: number) {
+    const qs = new URLSearchParams(searchParams.toString());
+    if (next > 0) qs.set("offset", String(next));
+    else qs.delete("offset");
+    router.replace(`/administration/audit-log${qs.toString() ? `?${qs.toString()}` : ""}`);
+  }
+
+  const hasActiveFilters = !!area || !!employeeId || !!action || !!dateFrom || !!dateTo;
+
   const columns: Column<AuditLogEntry>[] = [
     { header: "Zeit", cell: (e) => <span className="whitespace-nowrap text-neutral-500">{formatDateTime(e.createdAt)}</span> },
-    { header: "Mitarbeiter", cell: (e) => e.employeeLogin },
+    {
+      header: "Mitarbeiter",
+      info: "Name und Rolle der Person, die die Änderung vorgenommen hat.",
+      cell: (e) => (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="font-medium text-neutral-900">{e.employeeName || e.employeeLogin || "System"}</span>
+          {e.employeeRole && <Badge tone="neutral">{ROLE_LABEL[e.employeeRole] ?? e.employeeRole}</Badge>}
+        </span>
+      ),
+    },
     { header: "Bereich", info: "In welchem Teil des Systems die Änderung passiert ist.", cell: (e) => <Badge tone="gold">{areaLabel(e.area)}</Badge> },
     {
       header: "Objekt",
       info: "Der genaue Datensatz, der geändert wurde, mit seiner internen Nummer.",
-      cell: (e) => `${objectTypeLabel(e.objectType ?? "")} #${e.objectId}`,
+      cell: (e) => {
+        const label = `${objectTypeLabel(e.objectType ?? "")} ${e.objectId ? `#${e.objectId}` : ""}`.trim();
+        const href = objectLink(e.objectType, e.objectId);
+        if (!href) return label || "–";
+        return (
+          <a
+            href={href}
+            onClick={(ev) => ev.stopPropagation()}
+            className="text-phoenix-gold-dark hover:underline"
+          >
+            {label}
+          </a>
+        );
+      },
     },
     { header: "Aktion", cell: (e) => actionLabel(e.action) },
-    { header: "Vorher", info: "Der Zustand der Daten, bevor die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.previousValue} label="Vorher" /> },
-    { header: "Nachher", info: "Der Zustand der Daten, nachdem die Änderung gemacht wurde.", cell: (e) => <JsonViewer value={e.newValue} label="Nachher" /> },
     { header: "Grund / Kommentar", cell: (e) => e.reason || e.comment || "–" },
+    {
+      header: "Vorher/Nachher",
+      cell: (e) =>
+        e.previousValue == null && e.newValue == null ? (
+          "–"
+        ) : (
+          <button
+            type="button"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setDiffEntry(e);
+            }}
+            className="text-xs font-medium text-phoenix-gold-dark hover:underline"
+          >
+            Diff anzeigen
+          </button>
+        ),
+    },
     {
       header: "Rückgängig?",
       info: "Zeigt an, ob diese Änderung später wieder zurückgenommen wurde.",
@@ -198,16 +309,27 @@ export default function AuditLogClient() {
           <label htmlFor="area" className="mb-1 block text-xs font-medium text-neutral-600">
             Bereich
           </label>
-          <input
-            id="area"
-            defaultValue={area}
-            placeholder="z.B. employees"
-            className={inputClass}
-            onBlur={(e) => updateParam("area", e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") updateParam("area", (e.target as HTMLInputElement).value);
-            }}
-          />
+          <select id="area" value={area} onChange={(e) => updateParam("area", e.target.value)} className={inputClass}>
+            <option value="">Alle</option>
+            {Object.keys(AREA_LABEL).map((a) => (
+              <option key={a} value={a}>
+                {AREA_LABEL[a]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="action" className="mb-1 block text-xs font-medium text-neutral-600">
+            Aktion
+          </label>
+          <select id="action" value={action} onChange={(e) => updateParam("action", e.target.value)} className={inputClass}>
+            <option value="">Alle</option>
+            {Object.keys(ACTION_LABEL).map((a) => (
+              <option key={a} value={a}>
+                {ACTION_LABEL[a]}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="employeeId" className="mb-1 block text-xs font-medium text-neutral-600">
@@ -217,17 +339,34 @@ export default function AuditLogClient() {
             id="employeeId"
             defaultValue={employeeId}
             placeholder="z.B. 42"
-            className={inputClass}
+            className={`${inputClass} w-28`}
             onBlur={(e) => updateParam("employeeId", e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") updateParam("employeeId", (e.target as HTMLInputElement).value);
             }}
           />
         </div>
+        <div>
+          <label htmlFor="dateFrom" className="mb-1 block text-xs font-medium text-neutral-600">
+            Von
+          </label>
+          <input id="dateFrom" type="date" value={dateFrom} onChange={(e) => updateParam("dateFrom", e.target.value)} className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="dateTo" className="mb-1 block text-xs font-medium text-neutral-600">
+            Bis
+          </label>
+          <input id="dateTo" type="date" value={dateTo} onChange={(e) => updateParam("dateTo", e.target.value)} className={inputClass} />
+        </div>
+        {hasActiveFilters && (
+          <Button variant="secondary" onClick={() => router.replace("/administration/audit-log")}>
+            Filter zurücksetzen
+          </Button>
+        )}
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "forbidden" && (
           <StateMessage
             title="Keine Berechtigung"
@@ -238,15 +377,38 @@ export default function AuditLogClient() {
           <StateMessage
             title="PHÖNIX Backend nicht erreichbar"
             description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
           />
         )}
         {state === "error" && (
-          <StateMessage title="Audit Log konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Audit Log konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
-          <DataTable columns={columns} rows={entries} rowKey={(e) => e.id} emptyMessage="Keine Einträge gefunden" />
+          <>
+            <DataTable columns={columns} rows={entries} rowKey={(e) => e.id} emptyMessage={hasActiveFilters ? "Keine Einträge für diese Filter gefunden" : "Keine Einträge gefunden"} />
+            <Pagination offset={offset} limit={PAGE_SIZE} count={entries.length} total={total} onOffsetChange={goToOffset} />
+          </>
         )}
       </Card>
+
+      {diffEntry && (
+        <Modal title={`${objectTypeLabel(diffEntry.objectType)} ${diffEntry.objectId ? `#${diffEntry.objectId}` : ""} – ${actionLabel(diffEntry.action)}`} onClose={() => setDiffEntry(null)}>
+          <div className="max-h-[70vh] space-y-3 overflow-y-auto">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Vorher</p>
+              <pre className="max-w-full overflow-x-auto whitespace-pre-wrap rounded-md bg-neutral-50 p-2 text-[11px] leading-snug text-neutral-700">
+                {formatDiffValue(diffEntry.previousValue)}
+              </pre>
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Nachher</p>
+              <pre className="max-w-full overflow-x-auto whitespace-pre-wrap rounded-md bg-neutral-50 p-2 text-[11px] leading-snug text-neutral-700">
+                {formatDiffValue(diffEntry.newValue)}
+              </pre>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
