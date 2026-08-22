@@ -191,7 +191,17 @@ export default function FootballLeaguesClient() {
     { header: "Zuletzt gesehen", cell: (l) => formatLastSeen(l.last_seen_at) },
     {
       header: "Logo",
-      cell: (l) => <Badge tone={l.has_logo ? "green" : "neutral"}>{l.has_logo ? "Vorhanden" : "Fehlt"}</Badge>,
+      cell: (l) =>
+        l.has_logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`/api/football/assets/image?type=league&id=${encodeURIComponent(l.leagueId)}`}
+            alt=""
+            className="h-6 w-6 object-contain"
+          />
+        ) : (
+          <Badge tone="neutral">Fehlt</Badge>
+        ),
     },
     {
       header: "Technische Details",

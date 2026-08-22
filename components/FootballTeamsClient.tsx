@@ -153,7 +153,17 @@ export default function FootballTeamsClient() {
     },
     {
       header: "Logo",
-      cell: (t) => <Badge tone={t.has_logo ? "green" : "neutral"}>{t.has_logo ? "Vorhanden" : "Fehlt"}</Badge>,
+      cell: (t) =>
+        t.has_logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`/api/football/assets/image?type=team&id=${encodeURIComponent(t.id)}`}
+            alt=""
+            className="h-6 w-6 object-contain"
+          />
+        ) : (
+          <Badge tone="neutral">Fehlt</Badge>
+        ),
     },
   ];
 
