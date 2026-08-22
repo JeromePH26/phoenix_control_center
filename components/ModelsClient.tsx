@@ -22,9 +22,22 @@ const MODEL_STATUS_LABEL: Record<string, string> = {
   champion: "Champion (aktiv)",
   challenger: "Herausforderer",
   retired: "Ausgemustert",
+  rejected: "Abgelehnt",
 };
 function modelStatusLabel(status: string): string {
   return MODEL_STATUS_LABEL[status] ?? status;
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "–";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "–";
+  return date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+}
+
+function trainingPeriod(m: ModelVersion): string {
+  if (!m.training_start && !m.training_end) return "–";
+  return `${formatDate(m.training_start)} – ${formatDate(m.training_end)}`;
 }
 
 const TITLES: Record<string, { title: string; description: string }> = {
@@ -97,6 +110,11 @@ export default function ModelsClient() {
         ) : (
           fmt(m.training_count)
         ),
+    },
+    {
+      header: "Zeitraum",
+      info: "Zeitraum der Spiele, mit denen dieses Modell trainiert wurde.",
+      cell: (m) => trainingPeriod(m),
     },
     { header: "Erstellt", cell: (m) => fmt(m.created_at) },
   ];

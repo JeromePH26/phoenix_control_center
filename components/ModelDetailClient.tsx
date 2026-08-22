@@ -11,7 +11,7 @@ import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useLeagueNames } from "@/lib/useLeagueNames";
-import type { ModelEvaluation, ModelLabOverview, ModelVersionDetail } from "@/lib/types";
+import type { ModelAuditLogEntry, ModelEvaluation, ModelLabOverview, ModelVersionDetail } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
 
@@ -24,14 +24,51 @@ const MODEL_STATUS_LABEL: Record<string, string> = {
   champion: "Champion (aktiv)",
   challenger: "Herausforderer",
   retired: "Ausgemustert",
+  rejected: "Abgelehnt",
 };
 function modelStatusLabel(status: string): string {
   return MODEL_STATUS_LABEL[status] ?? status;
 }
 
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "–";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "–";
+  return date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+}
+
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "–";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "–";
+  return `${date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${date.toLocaleTimeString("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
+}
+
+// Section 13 (AN2): "Statusgrund" - Aktionen aus phoenix_model_audit_log,
+// in Klartext übersetzt statt als rohe action-Strings.
+const AUDIT_ACTION_LABEL: Record<string, string> = {
+  promotion: "Zum Champion befördert",
+  promotion_rejected: "Beförderung abgelehnt",
+  rollback: "Rollback durchgeführt",
+};
+function auditActionLabel(action: string): string {
+  return AUDIT_ACTION_LABEL[action] ?? action;
+}
+function auditReason(entry: ModelAuditLogEntry): string | null {
+  const details = entry.details;
+  if (!details) return null;
+  const reason = details["reason"];
+  return typeof reason === "string" && reason.trim() ? reason : null;
+}
+
 export default function ModelDetailClient({ id }: { id: string }) {
   const [model, setModel] = useState<ModelVersionDetail | null>(null);
   const [overview, setOverview] = useState<ModelLabOverview | null>(null);
+  const [auditLog, setAuditLog] = useState<ModelAuditLogEntry[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [action, setAction] = useState<"promote" | "rollback" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,9 +78,10 @@ export default function ModelDetailClient({ id }: { id: string }) {
   const load = useCallback(async () => {
     setState("loading");
     try {
-      const [modelRes, overviewRes] = await Promise.all([
+      const [modelRes, overviewRes, auditRes] = await Promise.all([
         fetch(`/api/model-lab/models/${encodeURIComponent(id)}`),
         fetch("/api/model-lab/overview"),
+        fetch("/api/model-lab/audit-log?limit=500"),
       ]);
       if (modelRes.status === 404) {
         setState("notfound");
@@ -61,6 +99,11 @@ export default function ModelDetailClient({ id }: { id: string }) {
       setModel(data);
       if (overviewRes.ok) {
         setOverview(await overviewRes.json().catch(() => null));
+      }
+      if (auditRes.ok) {
+        const auditData = await auditRes.json().catch(() => null);
+        const entries: ModelAuditLogEntry[] = Array.isArray(auditData?.entries) ? auditData.entries : [];
+        setAuditLog(entries.filter((e) => String(e.model_version_id) === String(id)));
       }
       setState("loaded");
     } catch {
@@ -123,6 +166,16 @@ export default function ModelDetailClient({ id }: { id: string }) {
     },
     { header: "Trefferquote", info: "Anteil der Spiele, bei denen die wahrscheinlichste Vorhersage tatsächlich eingetroffen ist. Höher = besser.", cell: (e) => fmt(e.accuracy) },
     { header: "Fiktiver Gewinn (ROI)", info: "Fiktiver Gewinn/Verlust in Prozent, wenn man nach diesem Modell gewettet hätte.", cell: (e) => fmt(e.roi) },
+    {
+      header: "Kalibrierung",
+      info: "Zeigt je Wahrscheinlichkeits-Bucket, ob die vorhergesagte Wahrscheinlichkeit tatsächlich eingetroffen ist - technische Detailauswertung.",
+      cell: (e) =>
+        Array.isArray(e.calibration) && e.calibration.length > 0 ? (
+          <JsonViewer value={e.calibration} label="Kalibrierung" />
+        ) : (
+          <span className="text-neutral-300">–</span>
+        ),
+    },
     { header: "Erstellt", cell: (e) => fmt(e.created_at) },
   ];
 
@@ -155,6 +208,10 @@ export default function ModelDetailClient({ id }: { id: string }) {
                 Markt: model.market,
                 Generation: model.generation,
                 "Übergeordnetes Modell": model.parent_model_id,
+                Zeitraum:
+                  model.training_start || model.training_end
+                    ? `${formatDate(model.training_start)} – ${formatDate(model.training_end)}`
+                    : null,
                 "Trainiert mit (Spiele)": model.training_count,
                 "Geprüft mit (Spiele)": model.validation_count,
                 "Zusätzlich getestet mit (Spiele)": model.holdout_count,
@@ -207,6 +264,38 @@ export default function ModelDetailClient({ id }: { id: string }) {
                 Zurück zu diesem Modell wechseln
               </Button>
             </div>
+          </Card>
+
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Statusgrund
+                <InfoTooltip text="Protokollierte Beförderungen, Rollbacks und abgelehnte Beförderungen für dieses Modell, samt Begründung." />
+              </span>
+            }
+          >
+            {auditLog.length === 0 ? (
+              <p className="text-sm text-neutral-400">
+                Keine protokollierten Statusänderungen für dieses Modell. Der aktuelle Status ({modelStatusLabel(model.status)}) ergibt sich
+                aus der Erstellung als {model.model_type === "global_baseline" ? "globales Basismodell" : "Herausforderer"}.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {auditLog
+                  .slice()
+                  .sort((a, b) => (b.occurred_at ?? "").localeCompare(a.occurred_at ?? ""))
+                  .map((entry) => (
+                    <li key={entry.id} className="flex items-start justify-between gap-4 border-b border-neutral-100 pb-2 text-sm last:border-0 last:pb-0">
+                      <div>
+                        <span className="font-medium text-neutral-900">{auditActionLabel(entry.action)}</span>
+                        {auditReason(entry) && <span className="text-neutral-500"> — {auditReason(entry)}</span>}
+                        <div className="text-xs text-neutral-400">Durch: {entry.actor}</div>
+                      </div>
+                      <span className="whitespace-nowrap text-xs text-neutral-400">{formatDateTime(entry.occurred_at)}</span>
+                    </li>
+                  ))}
+              </ul>
+            )}
           </Card>
 
           <Card

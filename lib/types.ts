@@ -371,6 +371,8 @@ export interface ModelVersion {
   league_id?: string | null;
   market: string;
   model_type?: string | null;
+  training_start?: string | null;
+  training_end?: string | null;
   training_count?: number | null;
   validation_count?: number | null;
   holdout_count?: number | null;
@@ -396,13 +398,33 @@ export interface ModelEvaluation {
   sample_size?: number | null;
   brier_score?: number | null;
   log_loss?: number | null;
+  calibration?: unknown[] | null;
   accuracy?: number | null;
   roi?: number | null;
+  period_start?: string | null;
+  period_end?: string | null;
   created_at?: string | null;
   [key: string]: unknown;
 }
 
 export type ModelVersionDetail = ModelVersion & { evaluations: ModelEvaluation[] };
+
+// Section 13 (AN2): "Statusgrund" - warum ein Modell champion/challenger/
+// retired wurde bzw. eine Beförderung abgelehnt wurde. Kommt 1:1 aus der
+// bestehenden phoenix_model_audit_log-Tabelle (bisher nur backend-intern
+// geschrieben, nie im Control Center gelesen).
+export interface ModelAuditLogEntry {
+  id: number;
+  occurred_at?: string | null;
+  action: string;
+  actor: string;
+  model_version_id?: number | null;
+  league_id?: string | null;
+  market?: string | null;
+  learning_run_id?: number | null;
+  details?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
 
 export interface ModelLabOverview {
   learningSystem?: string;
