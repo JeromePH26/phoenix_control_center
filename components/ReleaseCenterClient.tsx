@@ -5,6 +5,8 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
+import NotConfiguredState from "@/components/ui/NotConfiguredState";
 import StateMessage from "@/components/ui/StateMessage";
 import type { ReleaseConfig } from "@/lib/types";
 
@@ -57,6 +59,8 @@ export default function ReleaseCenterClient() {
           minimumSupportedVersion: config.minimum_supported_version,
           forcedUpdate: config.forced_update,
           changelog: config.changelog,
+          minimumOsAndroid: config.minimum_os_android,
+          minimumOsIos: config.minimum_os_ios,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -85,12 +89,16 @@ export default function ReleaseCenterClient() {
         </p>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Release-Konfiguration konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage title="Release-Konfiguration konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
       )}
 
       {state === "loaded" && config && (
@@ -123,13 +131,48 @@ export default function ReleaseCenterClient() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Changelog</label>
+              <label className={labelClass}>
+                <span className="inline-flex items-center gap-1">
+                  Release Notes / Changelog
+                  <InfoTooltip text="Was sich in der aktuellen Version geändert hat - der Text, den Nutzer z.B. im Update-Hinweis sehen könnten." />
+                </span>
+              </label>
               <textarea
                 rows={4}
                 className={inputClass}
                 value={config.changelog ?? ""}
                 onChange={(e) => setConfig({ ...config, changelog: e.target.value })}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>
+                  <span className="inline-flex items-center gap-1">
+                    App-Kompatibilität: Mindest-Android-Version
+                    <InfoTooltip text="Welche Android-Version die App mindestens unterstützt, z.B. 'Android 8.0'. Rein informativ, wird noch nicht technisch durchgesetzt." />
+                  </span>
+                </label>
+                <input
+                  className={inputClass}
+                  placeholder="z.B. Android 8.0"
+                  value={config.minimum_os_android ?? ""}
+                  onChange={(e) => setConfig({ ...config, minimum_os_android: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>
+                  <span className="inline-flex items-center gap-1">
+                    App-Kompatibilität: Mindest-iOS-Version
+                    <InfoTooltip text="Welche iOS-Version die App mindestens unterstützt, z.B. 'iOS 15'. Rein informativ, wird noch nicht technisch durchgesetzt." />
+                  </span>
+                </label>
+                <input
+                  className={inputClass}
+                  placeholder="z.B. iOS 15"
+                  value={config.minimum_os_ios ?? ""}
+                  onChange={(e) => setConfig({ ...config, minimum_os_ios: e.target.value })}
+                />
+              </div>
             </div>
             <label className="flex items-center gap-2 text-sm text-neutral-600">
               <input
@@ -153,6 +196,18 @@ export default function ReleaseCenterClient() {
             </Button>
           </div>
         </Card>
+      )}
+
+      {state === "loaded" && (
+        <NotConfiguredState
+          title="Store/APK-Status"
+          reason="Braucht Zugriff auf die App Store Connect API (iOS) und die Google Play Developer API (Android), um den echten Review-/Rollout-Status automatisch abzurufen — noch nicht angebunden."
+          requirements={[
+            "App Store Connect API-Schlüssel (Apple) hinterlegen",
+            "Google Play Developer API-Zugang (Service-Account) einrichten",
+            "Admin-Endpunkt bauen, der Review-Status, Rollout-Prozent und Build-/APK-Version aus beiden APIs abfragt",
+          ]}
+        />
       )}
     </div>
   );

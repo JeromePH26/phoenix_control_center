@@ -736,6 +736,9 @@ export interface ReleaseConfig {
   minimum_supported_version?: string | null;
   forced_update: boolean;
   changelog?: string | null;
+  // Section 24 (AN2): "App-Kompatibilität" - Mindest-OS-Version je Plattform.
+  minimum_os_android?: string | null;
+  minimum_os_ios?: string | null;
   updated_at?: string | null;
   updated_by?: string | null;
 }
