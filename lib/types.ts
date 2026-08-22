@@ -1018,10 +1018,28 @@ export interface PerformanceTimeSeriesPoint {
   avgValuePercent: number | null;
 }
 
+/** Liga-Rangliste: dieselbe deduplizierte Tippbasis wie Summary und Chart,
+ * einem beteiligten Team je Fixture zugeordnet. */
+export interface PerformanceByTeam {
+  teamId: string;
+  teamName: string;
+  teamLogo: string | null;
+  tipCount: number;
+  won: number;
+  lost: number;
+  push: number;
+  pending: number;
+  hitRatePercent: number | null;
+  profitUnits: number;
+  roiPercent: number | null;
+  avgOdds: number | null;
+}
+
 export interface PerformanceAggregateResponse {
   summary: PerformanceSummary;
   previousPeriod?: PerformanceSummary;
   byMarket?: PerformanceByMarket[];
+  byTeam?: PerformanceByTeam[];
   timeSeries?: PerformanceTimeSeriesPoint[];
 }
 

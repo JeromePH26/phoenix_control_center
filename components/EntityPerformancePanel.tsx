@@ -4,7 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import InfoTooltip from "@/components/ui/InfoTooltip";
-import type { FootballTip, PerformanceAggregateResponse, PerformanceByMarket, PerformanceTimeSeriesPoint } from "@/lib/types";
+import type {
+  FootballTip,
+  PerformanceAggregateResponse,
+  PerformanceByMarket,
+  PerformanceByTeam,
+  PerformanceTimeSeriesPoint,
+} from "@/lib/types";
 
 type Period = "7d" | "30d" | "3m" | "6m" | "1y" | "all" | "custom";
 const PERIOD_LABEL: Record<Period, string> = {
@@ -97,8 +103,10 @@ export default function EntityPerformancePanel({
   /** "performance" zeigt nur KPIs+Chart (Section 4), "markets" nur die Markt-Tabelle (Section 6/7), "full" beides (Rückwärtskompatibilität). */
   mode?: "full" | "performance" | "markets";
 }) {
-  const [period, setPeriod] = useState<Period>("3m");
-  const [metric, setMetric] = useState<Metric>("hitRatePercent");
+  // Liga-Profile starten bewusst mit dem vollständigen Tippverlauf. So
+  // verschwindet kein älterer Tipp still aus dem Diagramm.
+  const [period, setPeriod] = useState<Period>("all");
+  const [metric, setMetric] = useState<Metric>("tipCount");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [homeAway, setHomeAway] = useState<"" | "home" | "away">("");
@@ -137,6 +145,7 @@ export default function EntityPerformancePanel({
     if (minDataQuality) qs.set("minDataQuality", minDataQuality);
     if (minConfidence) qs.set("minConfidence", minConfidence);
     qs.set("includeMarketBreakdown", "true");
+    if (leagueId && !teamId) qs.set("includeTeamBreakdown", "true");
     qs.set("includePreviousPeriod", period !== "all" ? "true" : "false");
     qs.set("groupByTime", period === "7d" || period === "30d" ? "day" : period === "1y" || period === "all" ? "month" : "week");
     try {
@@ -324,11 +333,15 @@ export default function EntityPerformancePanel({
             <>
               <KpiGrid summary={summary} isSmallSample={isSmallSample} previous={previous} />
               <MetricSelect metric={metric} onChange={setMetric} />
+              <p className="-mt-3 text-xs text-neutral-500">
+                {summary.withTip} PHÖNIX-Tipps im gewählten Zeitraum · im Diagramm nach Zeitabschnitten zusammengefasst
+              </p>
               {(data?.timeSeries?.length ?? 0) === 0 ? (
                 <p className="text-sm text-neutral-400">Für diesen Zeitraum liegen noch nicht genügend Daten vor.</p>
               ) : (
                 <Chart series={data!.timeSeries!} metric={metric} />
               )}
+              {leagueId && !teamId && <LeagueTeamRanking rows={data?.byTeam ?? []} />}
             </>
           )}
 
@@ -470,7 +483,7 @@ function KpiGrid({
       </div>
       <div className="col-span-2 rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5 sm:col-span-4 lg:col-span-7">
         <p className="text-xs text-neutral-500">
-          {summary.won + summary.lost} entschiedene Tipps · {summary.push} Void/Push · {summary.pending} offen ·{" "}
+          {summary.withTip} PHÖNIX-Tipps · {summary.won + summary.lost} entschieden · {summary.push} Rückgabe · {summary.pending} offen ·{" "}
           {summary.sampleSize} Analysen gesamt
           {isSmallSample && " · geringe Datenbasis"}
         </p>
@@ -479,59 +492,129 @@ function KpiGrid({
   );
 }
 
-/** Section 4: Chart zeigt die vom Nutzer gewählte Kennzahl, nicht mehr fest die Trefferquote. Signierte Kennzahlen (ROI/Yield/Gewinn-Verlust/Ø Value) bekommen eine Nulllinie in der Mitte, damit Verluste sichtbar unter die Linie fallen. */
+function LeagueTeamRanking({ rows }: { rows: PerformanceByTeam[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white">
+      <div className="border-b border-neutral-100 px-4 py-3">
+        <p className="text-sm font-semibold text-neutral-900">Team-Rangliste</p>
+        <p className="mt-0.5 text-xs text-neutral-500">
+          Jeder Tipp wird beiden beteiligten Teams zugeordnet; die Rangfolge folgt Gewinn/Verlust in Units.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-neutral-200 bg-neutral-50 text-[11px] uppercase tracking-wide text-neutral-500">
+              <th className="w-12 px-4 py-2.5 font-medium">#</th>
+              <th className="px-3 py-2.5 font-medium">Mannschaft</th>
+              <th className="px-3 py-2.5 text-center font-medium">Tipps</th>
+              <th className="px-3 py-2.5 text-center font-medium">Gew.</th>
+              <th className="px-3 py-2.5 text-center font-medium">Zurück</th>
+              <th className="px-3 py-2.5 text-center font-medium">Verl.</th>
+              <th className="px-3 py-2.5 text-center font-medium">Offen</th>
+              <th className="px-3 py-2.5 text-center font-medium">Quote</th>
+              <th className="px-4 py-2.5 text-right font-medium">Ertrag</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-100">
+            {rows.map((row, index) => (
+              <tr key={row.teamId} className="hover:bg-neutral-50">
+                <td className="px-4 py-2.5 font-semibold text-neutral-400">{index + 1}</td>
+                <td className="px-3 py-2.5 font-medium text-neutral-900">
+                  <span className="flex items-center gap-2">
+                    {row.teamLogo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={row.teamLogo} alt="" className="h-5 w-5 object-contain" />
+                    ) : (
+                      <span className="h-5 w-5 rounded-full bg-neutral-100" />
+                    )}
+                    {row.teamName}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-center text-neutral-700">{row.tipCount}</td>
+                <td className="px-3 py-2.5 text-center font-medium text-emerald-700">{row.won}</td>
+                <td className="px-3 py-2.5 text-center text-neutral-500">{row.push}</td>
+                <td className="px-3 py-2.5 text-center font-medium text-red-600">{row.lost}</td>
+                <td className="px-3 py-2.5 text-center text-amber-700">{row.pending}</td>
+                <td className="px-3 py-2.5 text-center text-neutral-500">{row.avgOdds == null ? "–" : row.avgOdds.toFixed(2)}</td>
+                <td className={`px-4 py-2.5 text-right font-semibold ${row.profitUnits >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                  {row.profitUnits >= 0 ? "+" : ""}{row.profitUnits.toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/** Linienchart mit Skala, Raster und Datenpunkten. Anders als der frühere
+ * Balken zeigt er den Tippverlauf vollständig und bleibt auch bei Pending-
+ * Tipps aussagekräftig, wenn "Anzahl Tipps" gewählt ist. */
 function Chart({ series, metric }: { series: PerformanceTimeSeriesPoint[]; metric: Metric }) {
   const points = series ?? [];
-  if (points.length === 0) {
-    return <p className="text-sm text-neutral-400">Für diesen Zeitraum liegen noch nicht genügend Daten vor.</p>;
-  }
+  if (points.length === 0) return <p className="text-sm text-neutral-400">Für diesen Zeitraum liegen noch nicht genügend Daten vor.</p>;
+
   const signed = new Set<Metric>(["roiPercent", "yieldPercent", "profitUnits", "avgValuePercent"]);
   const isSigned = signed.has(metric);
   const values = points.map((p) => (typeof p[metric] === "number" ? (p[metric] as number) : null));
   const finiteValues = values.filter((v): v is number => v !== null);
-  const positiveCeiling = metric === "hitRatePercent" ? 100 : Math.max(...finiteValues.map((v) => Math.abs(v)), 1);
-  const chartHeight = 120;
-  const barWidth = Math.max(10, Math.min(48, 640 / points.length - 6));
-  const gap = 6;
-  const zeroY = isSigned ? chartHeight / 2 : chartHeight;
-  const usableHeight = isSigned ? chartHeight / 2 : chartHeight;
+  const maxValue = Math.max(...finiteValues, isSigned ? 0 : 1);
+  const minValue = isSigned ? Math.min(...finiteValues, 0) : 0;
+  const range = Math.max(maxValue - minValue, 1);
+  const width = Math.max(680, points.length * 84);
+  const height = 228;
+  const left = 48;
+  const right = 18;
+  const top = 18;
+  const bottom = 44;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const xFor = (index: number) => left + (points.length === 1 ? plotWidth / 2 : (index * plotWidth) / (points.length - 1));
+  const yFor = (value: number) => top + ((maxValue - value) / range) * plotHeight;
+  const linePoints = values
+    .map((value, index) => (value === null ? null : `${xFor(index)},${yFor(value)}`))
+    .filter((value): value is string => value !== null)
+    .join(" ");
+  const tickValues = Array.from({ length: 5 }, (_, index) => maxValue - (range * index) / 4);
 
   return (
-    <div className="overflow-x-auto">
-      <svg width={Math.max(640, points.length * (barWidth + gap))} height={chartHeight + 36}>
-        {isSigned && <line x1={0} y1={zeroY} x2={points.length * (barWidth + gap)} y2={zeroY} stroke="#d4d4d4" strokeWidth={1} />}
-        {points.map((p, i) => {
-          const v = values[i];
-          const x = i * (barWidth + gap);
-          const label = new Date(p.period).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
-          if (v === null) {
+    <div className="rounded-lg border border-neutral-200 bg-white p-3">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <p className="text-sm font-semibold text-neutral-900">{METRIC_LABEL[metric]} im Zeitverlauf</p>
+        <span className="inline-flex items-center gap-1.5 text-xs text-neutral-500"><span className="h-2 w-2 rounded-full bg-phoenix-gold" />{points.length} Zeitabschnitte</span>
+      </div>
+      <div className="overflow-x-auto">
+        <svg width={width} height={height} role="img" aria-label={`${METRIC_LABEL[metric]} als Zeitverlauf`}>
+          {tickValues.map((tick) => {
+            const y = yFor(tick);
             return (
-              <g key={p.period}>
-                <title>{label}: keine Daten</title>
-                <rect x={x} y={zeroY - 2} width={barWidth} height={2} fill="#e5e5e5" rx={2} />
-                <text x={x + barWidth / 2} y={chartHeight + 14} textAnchor="middle" fontSize="9" fill="#737373">
-                  {label}
-                </text>
+              <g key={tick}>
+                <line x1={left} y1={y} x2={width - right} y2={y} stroke="#e5e7eb" strokeWidth={1} />
+                <text x={left - 8} y={y + 3} textAnchor="end" fontSize="10" fill="#737373">{formatMetricValue(metric, tick)}</text>
               </g>
             );
-          }
-          const magnitude = Math.min(1, Math.abs(v) / positiveCeiling);
-          const barHeight = Math.max(2, magnitude * usableHeight);
-          const goodColor = metric === "hitRatePercent" ? v >= 50 : v >= 0;
-          const y = isSigned ? (v >= 0 ? zeroY - barHeight : zeroY) : chartHeight - barHeight;
-          return (
-            <g key={p.period}>
-              <title>
-                {label}: {formatMetricValue(metric, v)}
-              </title>
-              <rect x={x} y={y} width={barWidth} height={barHeight} fill={goodColor ? "#10b981" : "#ef4444"} rx={2} />
-              <text x={x + barWidth / 2} y={chartHeight + 14} textAnchor="middle" fontSize="9" fill="#737373">
-                {label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+          })}
+          {isSigned && minValue < 0 && maxValue > 0 && (
+            <line x1={left} y1={yFor(0)} x2={width - right} y2={yFor(0)} stroke="#a3a3a3" strokeWidth={1.25} />
+          )}
+          {linePoints && <polyline points={linePoints} fill="none" stroke="#0D9488" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />}
+          {points.map((point, index) => {
+            const value = values[index];
+            const labelDate = new Date(point.period);
+            const label = Number.isNaN(labelDate.getTime()) ? point.period : labelDate.toLocaleDateString("de-DE", { month: "short", year: "2-digit" });
+            const x = xFor(index);
+            return (
+              <g key={point.period}>
+                {value !== null && <><title>{`${label}: ${formatMetricValue(metric, value)}`}</title><circle cx={x} cy={yFor(value)} r={3.5} fill="#0D9488" stroke="#ffffff" strokeWidth={1.5} /></>}
+                <text x={x} y={height - 14} textAnchor="end" transform={`rotate(-36 ${x} ${height - 14})`} fontSize="10" fill="#737373">{label}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
     </div>
   );
 }
