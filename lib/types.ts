@@ -755,11 +755,27 @@ export interface Incident {
   responsible_employee_id?: number | null;
   actions_taken?: string | null;
   postmortem?: string | null;
+  // Section 27 (AN2): Auswirkungen, Verknüpfung zu Jobs/API-Ausfällen und zu
+  // bereits verschickter Nutzerkommunikation - Freitext (siehe Backend-
+  // Kommentar: Jobs/API-Ausfälle haben kein gemeinsames verlinkbares Schema).
+  impact_description?: string | null;
+  related_jobs_note?: string | null;
+  communication_note?: string | null;
   started_at?: string | null;
   ended_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   [key: string]: unknown;
+}
+
+export interface IncidentTimelineEvent {
+  id: number;
+  incident_id: number;
+  occurred_at?: string | null;
+  note: string;
+  created_by_employee_id?: number | null;
+  created_by_employee_name?: string | null;
+  created_at?: string | null;
 }
 
 export interface AdminSession {
