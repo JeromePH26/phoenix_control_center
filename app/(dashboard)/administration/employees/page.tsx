@@ -6,8 +6,10 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import EmployeeDetailModal from "@/components/EmployeeDetailModal";
 import NewEmployeeModal from "@/components/NewEmployeeModal";
 import { roleLabel, type Employee } from "@/lib/types";
 
@@ -20,6 +22,7 @@ export default function EmployeesPage() {
   const [disableTarget, setDisableTarget] = useState<Employee | null>(null);
   const [disableBusy, setDisableBusy] = useState(false);
   const [disableError, setDisableError] = useState<string | null>(null);
+  const [detailTarget, setDetailTarget] = useState<Employee | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -72,7 +75,14 @@ export default function EmployeesPage() {
   }
 
   const columns: Column<Employee>[] = [
-    { header: "Name", cell: (e) => <span className="font-medium text-neutral-900">{e.name}</span> },
+    {
+      header: "Name",
+      cell: (e) => (
+        <button className="text-left font-medium text-phoenix-gold-dark hover:underline" onClick={() => setDetailTarget(e)}>
+          {e.name}
+        </button>
+      ),
+    },
     { header: "Login", cell: (e) => e.login },
     { header: "E-Mail", cell: (e) => e.email },
     { header: "Rolle", info: "Legt fest, welche Rechte der Mitarbeiter standardmäßig hat (siehe Seite 'Rechte').", cell: (e) => <Badge tone="gold">{roleLabel(e.role)}</Badge> },
@@ -120,7 +130,7 @@ export default function EmployeesPage() {
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "forbidden" && (
           <StateMessage
             title="Keine Berechtigung"
@@ -131,10 +141,11 @@ export default function EmployeesPage() {
           <StateMessage
             title="PHÖNIX Backend nicht erreichbar"
             description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
           />
         )}
         {state === "error" && (
-          <StateMessage title="Mitarbeiter konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Mitarbeiter konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <DataTable columns={columns} rows={employees} rowKey={(e) => e.id} emptyMessage="Keine Mitarbeiter vorhanden" />
@@ -160,6 +171,17 @@ export default function EmployeesPage() {
           error={disableError}
           onConfirm={handleDisable}
           onClose={() => setDisableTarget(null)}
+        />
+      )}
+
+      {detailTarget && (
+        <EmployeeDetailModal
+          employee={detailTarget}
+          onClose={() => setDetailTarget(null)}
+          onUpdated={() => {
+            setDetailTarget(null);
+            load();
+          }}
         />
       )}
     </div>
