@@ -47,9 +47,10 @@ interface WarningItem {
 }
 
 // Section 5: echter Warnbereich oben auf der Übersicht - nur Kacheln, deren
-// Zahl auch tatsächlich > 0 ist, werden angezeigt. Kein "API-Limit
-// kritisch"-Eintrag, solange kein reales Tageslimit in der Datenbank
-// existiert (siehe Section 25) - keine erfundene Prozentzahl.
+// Zahl auch tatsächlich > 0 ist, werden angezeigt. "API-Limit kritisch"
+// (Section 25) erscheint nur für Datenquellen mit einem tatsächlich
+// konfigurierten Tageslimit (API_<NAME>_DAILY_LIMIT) - ohne Limit gibt es
+// keine erfundene Prozentzahl.
 function WarningBanner({ items }: { items: WarningItem[] }) {
   const active = items.filter((i) => i.count > 0);
   if (active.length === 0) return null;
@@ -104,12 +105,17 @@ export default async function OverviewPage() {
   const apiUsageToday = overview?.apiUsage ?? [];
   const lastRun = overview?.modelLab?.lastLearningRun;
 
+  const criticalApiUsage = apiUsageToday.filter(
+    (r) => r.daily_limit != null && r.daily_limit > 0 && r.requests / r.daily_limit >= 0.85
+  );
+
   const warnings: WarningItem[] = [
     { label: "fehlgeschlagene Pipeline-Läufe (24h)", count: dailyPipeline?.failed24h ?? 0, href: "/infrastructure/jobs" },
     { label: "fehlgeschlagene Settlements (24h)", count: settlement?.failed24h ?? 0, href: "/infrastructure/jobs" },
     { label: "offene Settlements", count: overview?.footballToday?.openSettlementJobs ?? 0, href: "/football/settlement" },
     { label: "Spiele mit niedriger Datenqualität heute", count: overview?.footballToday?.lowDataQuality ?? 0, href: "/football/data-quality" },
     { label: "Whitelist-Ligen ohne Wappen", count: overview?.warnings?.missingLeagueLogos ?? 0, href: "/football/assets" },
+    { label: "API-Limit kritisch (≥85%)", count: criticalApiUsage.length, href: "/infrastructure/api-usage" },
   ];
 
   return (

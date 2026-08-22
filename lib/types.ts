@@ -322,6 +322,12 @@ export interface ApiUsageRow {
   api_name: string;
   usage_date: string;
   requests: number;
+  // Section 25 (AN2, "Höchste Priorität"): errors ist neu (vorher gab es
+  // keine Fehlerzählung); daily_limit kommt aus einer optionalen
+  // API_<NAME>_DAILY_LIMIT-Umgebungsvariable - null heißt "nicht
+  // konfiguriert", niemals ein erfundener Wert.
+  errors?: number;
+  daily_limit?: number | null;
   updated_at?: string | null;
   [key: string]: unknown;
 }
