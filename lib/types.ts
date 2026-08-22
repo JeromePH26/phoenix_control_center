@@ -785,6 +785,10 @@ export interface AdminSession {
   employee_login: string;
   created_at?: string | null;
   expires_at?: string | null;
+  // Section 32 (AN2): nur in der Login-Verlauf-Antwort (listAdminSessionsHistory)
+  // vorhanden, nicht in der aktive-Sessions-Liste.
+  revoked_at?: string | null;
+  active?: boolean;
   ip?: string | null;
   user_agent?: string | null;
 }

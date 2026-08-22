@@ -34,7 +34,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = await safeJson<LoginResponse>(res);
+    const data = await safeJson<LoginResponse & { requiresTwoFactor?: boolean; pendingToken?: string }>(res);
+
+    // Section 32 (AN2): Passwort korrekt, aber 2FA-Code fehlt noch - der
+    // pendingToken ist absichtlich kein Session-Token (single-use, 5 Min.
+    // gültig, taugt für nichts außer einem einzelnen 2FA-Verifizierungsversuch),
+    // deshalb darf er - anders als der echte Session-Token - an den Client
+    // durchgereicht werden.
+    if (data?.requiresTwoFactor && data.pendingToken) {
+      return NextResponse.json({ requiresTwoFactor: true, pendingToken: data.pendingToken });
+    }
+
     if (!data?.token || !data?.employee) {
       return NextResponse.json({ error: "malformed_backend_response" }, { status: 502 });
     }

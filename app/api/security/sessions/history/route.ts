@@ -1,0 +1,18 @@
+import { NextResponse } from "next/server";
+import { backendFetch, safeJson } from "@/lib/backend";
+import { backendUnreachableResponse, getSessionToken, isBackendUnreachable } from "@/lib/route-helpers";
+
+// GET /api/security/sessions/history -> backend GET /api/admin/control-center/security/sessions/history
+// Section 32 (AN2): "Login-Verlauf" - auch abgelaufene/beendete Sessions.
+export async function GET() {
+  const token = getSessionToken();
+  if (!token) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  try {
+    const res = await backendFetch("/security/sessions/history", { token });
+    const data = await safeJson(res);
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    if (isBackendUnreachable(err)) return backendUnreachableResponse();
+    throw err;
+  }
+}
