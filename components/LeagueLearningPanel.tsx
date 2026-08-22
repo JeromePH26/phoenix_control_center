@@ -17,6 +17,16 @@ function statusLabel(status: string): string {
   return LEAGUE_MARKET_STATUS_LABEL[status as LeagueMarketStatus] ?? status;
 }
 
+// Section 14 (AN2): "Noch X abgerechnete Spiele bis zur liga-spezifischen
+// Version" - nur solange die Liga noch kein eigenes Modell erreichen kann.
+function progressHint(m: { status: string; sampleSize: number; sampleThreshold?: number | null }): string | null {
+  if (m.status !== "NOT_ENOUGH_DATA" && m.status !== "GLOBAL_ONLY") return null;
+  if (typeof m.sampleThreshold !== "number") return null;
+  const remaining = m.sampleThreshold - m.sampleSize;
+  if (remaining <= 0) return null;
+  return `Noch ${remaining} abgerechnete Spiele bis zur liga-spezifischen Version.`;
+}
+
 export default function LeagueLearningPanel({ leagueId }: { leagueId: string }) {
   const [data, setData] = useState<LeagueLearningOverview | null>(null);
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
@@ -76,6 +86,7 @@ export default function LeagueLearningPanel({ leagueId }: { leagueId: string }) 
                 <td className="py-2.5 pr-4 align-top text-neutral-800">{m.marketLabel}</td>
                 <td className="py-2.5 pr-4 align-top">
                   <Badge tone={statusTone(m.status)}>{statusLabel(m.status)}</Badge>
+                  {progressHint(m) && <p className="mt-1 text-xs text-neutral-400">{progressHint(m)}</p>}
                 </td>
                 <td className="py-2.5 pr-4 align-top text-neutral-800">{m.sampleSize}</td>
                 <td className="py-2.5 pr-4 align-top">

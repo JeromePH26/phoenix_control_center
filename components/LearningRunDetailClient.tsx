@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import JsonViewer from "@/components/ui/JsonViewer";
 import KeyValueList from "@/components/ui/KeyValueList";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import type { LearningRun } from "@/lib/types";
 
@@ -26,6 +27,34 @@ const RUN_STATUS_LABEL: Record<string, string> = {
 };
 function runStatusLabel(status: string): string {
   return RUN_STATUS_LABEL[status] ?? status;
+}
+
+function formatDateTime(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "–";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${date.toLocaleTimeString("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
+}
+
+function formatDuration(startedAt: unknown, completedAt: unknown, status: string): string {
+  if (!startedAt) return "–";
+  const start = new Date(String(startedAt));
+  if (Number.isNaN(start.getTime())) return "–";
+  if (!completedAt) return status === "running" ? "Läuft noch" : "–";
+  const end = new Date(String(completedAt));
+  if (Number.isNaN(end.getTime())) return "–";
+  const seconds = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
+  if (seconds < 60) return `${seconds} Sek.`;
+  const minutes = Math.floor(seconds / 60);
+  const remSeconds = seconds % 60;
+  if (minutes < 60) return `${minutes} Min. ${remSeconds} Sek.`;
+  const hours = Math.floor(minutes / 60);
+  const remMinutes = minutes % 60;
+  return `${hours} Std. ${remMinutes} Min.`;
 }
 
 export default function LearningRunDetailClient({ id }: { id: string }) {
@@ -68,13 +97,21 @@ export default function LearningRunDetailClient({ id }: { id: string }) {
         <h1 className="mt-1 text-xl font-semibold text-neutral-900">Learning-Run #{id}</h1>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "notfound" && <StateMessage title="Run nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Run konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage
+          title="Run konnte nicht geladen werden"
+          description="Ein unerwarteter Fehler ist aufgetreten."
+          onRetry={load}
+        />
       )}
 
       {state === "loaded" && run && (
@@ -89,8 +126,10 @@ export default function LearningRunDetailClient({ id }: { id: string }) {
                 "Lernfähige Spiele": run.eligible_matches,
                 "Ausgeschlossene Spiele": run.excluded_matches,
                 "Challenger erstellt": run.challengers_created,
-                Gestartet: run.started_at,
-                Beendet: run.completed_at,
+                Gestartet: formatDateTime(run.started_at),
+                Beendet: run.completed_at ? formatDateTime(run.completed_at) : null,
+                Dauer: formatDuration(run.started_at, run.completed_at, run.status),
+                Fehler: Array.isArray(run.errors) ? run.errors.length : 0,
               }}
             />
           </Card>

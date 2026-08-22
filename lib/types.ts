@@ -474,6 +474,18 @@ export interface ShadowPrediction {
   [key: string]: unknown;
 }
 
+// Section 14 (AN2): "Vorher/Nachher-Vergleich" - das paarweise, statistische
+// Champion-vs-Challenger-Ergebnis, das der Monthly-Review-Service bereits
+// berechnet (metrics.dart PairedUncertaintyResult.toJson()), aber bisher nie
+// im Frontend gelesen wurde.
+export interface MonthlyReviewUncertainty {
+  sampleSize: number;
+  meanDifference: number;
+  lowerBound: number;
+  upperBound: number;
+  status: "challengerClearlyBetter" | "approximatelyEqual" | "championBetter" | "notEnoughData" | string;
+}
+
 export interface MonthlyReview {
   id: number;
   review_year: number;
@@ -483,6 +495,8 @@ export interface MonthlyReview {
   champion_model_id?: number | null;
   challenger_model_id?: number | null;
   same_match_sample?: number | null;
+  metrics?: Record<string, unknown> | null;
+  uncertainty?: MonthlyReviewUncertainty | null;
   recommendation: string;
   reason?: string | null;
   reviewed_at?: string | null;
@@ -960,6 +974,10 @@ export interface LeagueLearningMarket {
   market: string;
   marketLabel: string;
   sampleSize: number;
+  // Section 14 (AN2): Schwellenwert für den Übergang aus "Nur globales
+  // Modell"/"Zu wenig Daten" zur liga-spezifischen Anpassung - reale
+  // Backend-Konfiguration (leagueAdaptationSampleThreshold), kein Frontend-Wert.
+  sampleThreshold?: number | null;
   status: LeagueMarketStatus | string;
   champion: LeagueMarketModelRef | null;
   bestChallenger: LeagueMarketModelRef | null;

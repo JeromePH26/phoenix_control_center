@@ -8,6 +8,7 @@ import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useLeagueNames } from "@/lib/useLeagueNames";
@@ -45,6 +46,25 @@ function formatDateTime(value: unknown): string {
     hour: "2-digit",
     minute: "2-digit",
   })} Uhr`;
+}
+
+// Section 14 (AN2): "Dauer" - aus started_at/completed_at berechnet, es gibt
+// keine eigene Dauer-Spalte im Backend.
+function formatDuration(startedAt: unknown, completedAt: unknown, status: string): string {
+  if (!startedAt) return "–";
+  const start = new Date(String(startedAt));
+  if (Number.isNaN(start.getTime())) return "–";
+  if (!completedAt) return status === "running" ? "Läuft noch" : "–";
+  const end = new Date(String(completedAt));
+  if (Number.isNaN(end.getTime())) return "–";
+  const seconds = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
+  if (seconds < 60) return `${seconds} Sek.`;
+  const minutes = Math.floor(seconds / 60);
+  const remSeconds = seconds % 60;
+  if (minutes < 60) return `${minutes} Min. ${remSeconds} Sek.`;
+  const hours = Math.floor(minutes / 60);
+  const remMinutes = minutes % 60;
+  return `${hours} Std. ${remMinutes} Min.`;
 }
 
 export default function LearningClient() {
@@ -124,6 +144,7 @@ export default function LearningClient() {
     { header: "Ligen / Märkte", cell: (r) => `${fmt(r.leagues_processed)} / ${fmt(r.markets_processed)}` },
     { header: "Challenger erstellt", cell: (r) => fmt(r.challengers_created) },
     { header: "Gestartet", cell: (r) => formatDateTime(r.started_at) },
+    { header: "Dauer", cell: (r) => formatDuration(r.started_at, r.completed_at, r.status) },
   ];
 
   const perLeagueColumns: Column<EligibilityAudit["perLeague"][number]>[] = [
@@ -144,12 +165,20 @@ export default function LearningClient() {
         <p className="text-sm text-neutral-400">Statistisches Modell-Learning — keine generative KI (Section 56/97).</p>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Learning-Status konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage
+          title="Learning-Status konnte nicht geladen werden"
+          description="Ein unerwarteter Fehler ist aufgetreten."
+          onRetry={load}
+        />
       )}
 
       {state === "loaded" && overview && (
