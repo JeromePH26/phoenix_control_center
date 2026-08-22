@@ -5,8 +5,10 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
+import ArticleHistoryPanel from "@/components/ArticleHistoryPanel";
 import type { FeatureFlag } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -53,6 +55,7 @@ export default function FeatureFlagsClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [historyFlag, setHistoryFlag] = useState<FeatureFlag | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -125,7 +128,8 @@ export default function FeatureFlagsClient() {
     { header: "Flag", cell: (f) => <span className="font-medium text-neutral-900">{f.label}</span> },
     { header: "Key", cell: (f) => <code className="text-xs text-neutral-500">{f.flag_key}</code> },
     {
-      header: "Aktiv",
+      header: "Kill Switch",
+      info: "Übersteuert Rollout-Prozent und Zielgruppe komplett: 'Aus' bedeutet, niemand bekommt dieses Feature, egal was unten eingestellt ist.",
       cell: (f) => (
         <Button
           variant={f.enabled ? "primary" : "secondary"}
@@ -188,6 +192,14 @@ export default function FeatureFlagsClient() {
       ),
     },
     { header: "Geändert", cell: (f) => `${fmt(f.updated_at)} (${fmt(f.updated_by)})` },
+    {
+      header: "Verlauf",
+      cell: (f) => (
+        <Button variant="secondary" onClick={() => setHistoryFlag(f)}>
+          Verlauf
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -200,19 +212,24 @@ export default function FeatureFlagsClient() {
           </h1>
           <p className="text-sm text-neutral-400">
             Feature Flags, Rollout-Prozentsatz und Test/Live-Status in einem Modell — ein Flag auf &quot;Test&quot; ist
-            noch nicht für echte Nutzer sichtbar.
+            noch nicht für echte Nutzer sichtbar. Wird von der App noch nicht ausgelesen — dies ist die Definition,
+            keine bereits wirksame Steuerung.
           </p>
         </div>
         <Button onClick={() => setCreating(true)}>Neues Flag</Button>
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "unreachable" && (
-          <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+          <StateMessage
+            title="PHÖNIX Backend nicht erreichbar"
+            description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
+          />
         )}
         {state === "error" && (
-          <StateMessage title="Flags konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Flags konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <DataTable columns={columns} rows={flags} rowKey={(f) => f.flag_key} emptyMessage="Noch keine Feature Flags" />
@@ -261,6 +278,12 @@ export default function FeatureFlagsClient() {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {historyFlag && (
+        <Modal title={`Verlauf: ${historyFlag.label}`} onClose={() => setHistoryFlag(null)}>
+          <ArticleHistoryPanel area="featureFlags" objectId={historyFlag.flag_key} />
         </Modal>
       )}
     </div>

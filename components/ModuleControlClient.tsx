@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import type { ModuleControl } from "@/lib/types";
 
@@ -71,12 +73,16 @@ export default function ModuleControlClient() {
         </p>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Module konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage title="Module konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
       )}
 
       {state === "loaded" && (
@@ -98,10 +104,16 @@ export default function ModuleControlClient() {
               <p className="mt-2 text-xs text-neutral-400">
                 Zuletzt geändert: {fmt(m.updated_at)} {m.updated_by ? `von ${m.updated_by}` : ""}
               </p>
+              {!m.enforced_in_backend && (
+                <p className="mt-2 flex items-center gap-1 text-xs text-amber-700">
+                  Schalter würde nichts bewirken — noch nicht mit Backend-Verhalten verbunden.
+                  <InfoTooltip text="Dieses Modul existiert als Datensatz, aber kein Backend-Job prüft diesen Schalter. Ein Umschalten hätte aktuell keinen echten Effekt, deshalb bewusst deaktiviert statt eine Wirkung vorzutäuschen." />
+                </p>
+              )}
               <div className="mt-3">
                 <Button
                   variant={m.enabled ? "danger" : "primary"}
-                  disabled={savingKey === m.module_key}
+                  disabled={savingKey === m.module_key || !m.enforced_in_backend}
                   onClick={() => toggle(m)}
                 >
                   {savingKey === m.module_key ? "…" : m.enabled ? "Deaktivieren" : "Aktivieren"}

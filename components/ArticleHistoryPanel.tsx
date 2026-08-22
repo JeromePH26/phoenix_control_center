@@ -10,6 +10,8 @@ import type { AuditLogEntry } from "@/lib/types";
 const ACTION_LABEL: Record<string, string> = {
   "article.create": "Erstellt",
   "article.update": "Geändert",
+  "flag.create": "Erstellt",
+  "flag.update": "Geändert",
 };
 function actionLabel(action: string): string {
   if (ACTION_LABEL[action]) return ACTION_LABEL[action];
@@ -27,11 +29,14 @@ function formatDateTime(iso: string | null | undefined): string {
 }
 
 /**
- * Section 20 (AN2): "Änderungshistorie" für News- und FAQ-Artikel - dieselbe
- * admin_audit_log-Tabelle, die auch die Haupt-Audit-Log-Seite anzeigt
- * (Section 4), hier gefiltert auf ein einzelnes Objekt.
+ * Section 20/23 (AN2): "Änderungshistorie" - dieselbe admin_audit_log-
+ * Tabelle, die auch die Haupt-Audit-Log-Seite anzeigt (Section 4), hier
+ * gefiltert auf ein einzelnes Objekt. Ursprünglich für News/FAQ gebaut,
+ * area ist bewusst ein freier String, damit jede weitere Stelle mit
+ * area+objectId im Audit Log (z.B. Feature Flags) dieselbe Komponente
+ * wiederverwenden kann.
  */
-export default function ArticleHistoryPanel({ area, objectId }: { area: "news" | "faq"; objectId: number | string }) {
+export default function ArticleHistoryPanel({ area, objectId }: { area: string; objectId: number | string }) {
   const [entries, setEntries] = useState<AuditLogEntry[] | null>(null);
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading");
   const { employeeName } = useEmployeeNames();
