@@ -474,6 +474,26 @@ export interface ShadowPrediction {
   [key: string]: unknown;
 }
 
+// Section 15 (AN2): "ausstehend" - Vorschauzahlen vor generieren/abrechnen.
+export interface ShadowStatus {
+  pendingSettle: number;
+  totalShadowPredictions: number;
+  actionInProgress: "generate" | "settle" | null;
+}
+
+// Section 15 (AN2): "Champion-vs-Challenger, Signifikanz" - derselbe
+// gepaarte Bootstrap-Vergleich wie bei Reviews, hier live pro Modell.
+export interface ShadowComparisonToChampion {
+  championModelId: number;
+  championReadableVersion?: string | null;
+  minPromotionSample: number;
+  sampleSize: number;
+  meanDifference: number;
+  lowerBound: number;
+  upperBound: number;
+  status: "challengerClearlyBetter" | "approximatelyEqual" | "championBetter" | "notEnoughData" | string;
+}
+
 // Section 14 (AN2): "Vorher/Nachher-Vergleich" - das paarweise, statistische
 // Champion-vs-Challenger-Ergebnis, das der Monthly-Review-Service bereits
 // berechnet (metrics.dart PairedUncertaintyResult.toJson()), aber bisher nie

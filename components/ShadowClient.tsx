@@ -1,15 +1,16 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useLeagueNames } from "@/lib/useLeagueNames";
-import type { ShadowPrediction } from "@/lib/types";
+import type { ShadowComparisonToChampion, ShadowPrediction, ShadowStatus } from "@/lib/types";
 
 type BatchAction = "generate" | "settle" | null;
 
@@ -17,6 +18,8 @@ interface PerformanceResult {
   modelVersionId: number;
   settledShadowPredictions: number;
   averageBrierScore: number | null;
+  accuracy: number | null;
+  comparisonToChampion: ShadowComparisonToChampion | null;
   predictions: ShadowPrediction[];
 }
 
@@ -25,24 +28,72 @@ function fmt(value: unknown): string {
   return String(value);
 }
 
+// Section 15 (AN2): "Signifikanz" in Klartext statt als rohes status-Enum.
+const COMPARISON_LABEL: Record<string, string> = {
+  challengerClearlyBetter: "Herausforderer statistisch klar besser",
+  approximatelyEqual: "Kein statistisch eindeutiger Unterschied",
+  championBetter: "Champion statistisch besser",
+  notEnoughData: "Statistische Unsicherheit zu groß",
+};
+function comparisonLabel(status: string): string {
+  return COMPARISON_LABEL[status] ?? status;
+}
+function comparisonTone(status: string): "green" | "gold" | "neutral" | "red" {
+  if (status === "challengerClearlyBetter") return "gold";
+  if (status === "championBetter") return "red";
+  return "neutral";
+}
+
+function formatNumber(v: number, digits = 4): string {
+  return v.toFixed(digits).replace(".", ",");
+}
+
 const inputClass =
   "w-40 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
 export default function ShadowClient() {
   const { leagueName } = useLeagueNames();
+  const [status, setStatus] = useState<ShadowStatus | null>(null);
   const [batchAction, setBatchAction] = useState<BatchAction>(null);
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
   const [batchResult, setBatchResult] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const [modelVersionId, setModelVersionId] = useState("");
   const [perf, setPerf] = useState<PerformanceResult | null>(null);
   const [perfState, setPerfState] = useState<"idle" | "loading" | "loaded" | "error" | "unreachable">("idle");
 
+  const loadStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/model-lab/shadow/status");
+      if (res.ok) setStatus(await res.json().catch(() => null));
+    } catch {
+      // Section 15: Status ist nur eine Vorschau - ein Fehler hier blockiert die Seite nicht.
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  // Section 15 (AN2): "Laufzeit ... sichtbar machen" - generate/settle sind
+  // synchrone Backend-Aufrufe ohne eigene Fortschritts-API, daher die real
+  // gemessene Wanduhrzeit client-seitig als Sekunden-Zähler während der
+  // laufenden Anfrage.
+  useEffect(() => {
+    if (!batchBusy) return;
+    setElapsedSeconds(0);
+    const start = Date.now();
+    const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [batchBusy]);
+
   async function runBatchAction() {
     if (!batchAction) return;
     setBatchBusy(true);
     setBatchError(null);
+    const startedAt = Date.now();
     try {
       const res = await fetch(`/api/model-lab/shadow/${batchAction}`, { method: "POST" });
       const data = await res.json().catch(() => null);
@@ -50,9 +101,13 @@ export default function ShadowClient() {
         setBatchError(data?.error ?? `Fehler (Status ${res.status}).`);
         return;
       }
+      const seconds = ((Date.now() - startedAt) / 1000).toFixed(1).replace(".", ",");
       const count = batchAction === "generate" ? data?.created : data?.settled;
-      setBatchResult(`${batchAction === "generate" ? "Erstellt" : "Abgerechnet"}: ${count ?? "–"}`);
+      setBatchResult(
+        `${batchAction === "generate" ? "Erstellt" : "Abgerechnet"}: ${count ?? "–"} (Laufzeit: ${seconds} Sek.)`
+      );
       setBatchAction(null);
+      loadStatus();
     } catch {
       setBatchError("Verbindung zum Backend fehlgeschlagen.");
     } finally {
@@ -105,15 +160,37 @@ export default function ShadowClient() {
         </p>
       </div>
 
-      <Card title="Shadow-Predictions verwalten">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={() => { setBatchAction("generate"); setBatchError(null); }}>
+      <Card
+        title="Shadow-Predictions verwalten"
+        action={<span className="text-xs text-neutral-400">Kein zusätzlicher API-Verbrauch – nutzt bereits gespeicherte Daten</span>}
+      >
+        <KeyValueList
+          data={{
+            "Ausstehend zum Abrechnen": status?.pendingSettle,
+            "Gesamt Shadow-Predictions": status?.totalShadowPredictions,
+          }}
+          info={{
+            "Ausstehend zum Abrechnen": "Shadow-Predictions, deren Spiel schon vorbei ist, aber noch nicht mit dem echten Ergebnis abgeglichen wurde.",
+          }}
+        />
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            disabled={batchBusy || !!status?.actionInProgress}
+            onClick={() => { setBatchAction("generate"); setBatchError(null); }}
+          >
             Ausstehende generieren
           </Button>
-          <Button variant="secondary" onClick={() => { setBatchAction("settle"); setBatchError(null); }}>
+          <Button
+            variant="secondary"
+            disabled={batchBusy || !!status?.actionInProgress}
+            onClick={() => { setBatchAction("settle"); setBatchError(null); }}
+          >
             Ausstehende abrechnen
           </Button>
-          {batchResult && <span className="text-sm text-neutral-500">{batchResult}</span>}
+          {batchBusy && <span className="text-sm text-neutral-500">Läuft seit {elapsedSeconds} Sek. …</span>}
+          {!batchBusy && batchResult && <span className="text-sm text-neutral-500">{batchResult}</span>}
+          {!batchBusy && batchError && <span className="text-sm text-red-600">{batchError}</span>}
         </div>
       </Card>
 
@@ -149,14 +226,54 @@ export default function ShadowClient() {
           <div className="mt-4 space-y-4">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
-                <p className="text-xs text-neutral-500">Settled Predictions</p>
+                <p className="text-xs text-neutral-500">Abgerechnet</p>
                 <p className="mt-0.5 text-xl font-semibold text-neutral-900">{perf.settledShadowPredictions}</p>
+              </div>
+              <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
+                <p className="flex items-center gap-1 text-xs text-neutral-500">
+                  Trefferquote
+                  <InfoTooltip text="Anteil der Fälle, in denen die höchste vorhergesagte Wahrscheinlichkeit tatsächlich eingetroffen ist." />
+                </p>
+                <p className="mt-0.5 text-xl font-semibold text-neutral-900">
+                  {perf.accuracy != null ? `${(perf.accuracy * 100).toFixed(1).replace(".", ",")} %` : "–"}
+                </p>
               </div>
               <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
                 <p className="text-xs text-neutral-500">Ø Brier Score</p>
                 <p className="mt-0.5 text-xl font-semibold text-neutral-900">{perf.averageBrierScore ?? "–"}</p>
               </div>
+              <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
+                <p className="flex items-center gap-1 text-xs text-neutral-500">
+                  ROI
+                  <InfoTooltip text="Shadow-Predictions haben keine Marktquote (kein echter Einsatz) - ein ROI wäre erfunden. ROI ist nur für echte Tipps verfügbar." />
+                </p>
+                <p className="mt-0.5 text-sm text-neutral-400">Nicht verfügbar</p>
+              </div>
             </div>
+
+            <div>
+              <p className="mb-1 text-xs font-medium text-neutral-600">Champion-vs-Challenger (Signifikanz)</p>
+              {perf.comparisonToChampion ? (
+                <div className="rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
+                  <Badge tone={comparisonTone(perf.comparisonToChampion.status)}>
+                    {comparisonLabel(perf.comparisonToChampion.status)}
+                  </Badge>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Gegen Champion #{perf.comparisonToChampion.championModelId}
+                    {perf.comparisonToChampion.championReadableVersion ? ` (${perf.comparisonToChampion.championReadableVersion})` : ""}:
+                    Δ Brier {formatNumber(perf.comparisonToChampion.meanDifference)} (95%-CI [
+                    {formatNumber(perf.comparisonToChampion.lowerBound)}, {formatNumber(perf.comparisonToChampion.upperBound)}],
+                    n={perf.comparisonToChampion.sampleSize} von {perf.comparisonToChampion.minPromotionSample} benötigt)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-neutral-400">
+                  Kein Vergleich verfügbar — entweder ist dieses Modell selbst der Champion, oder es gibt (noch) keinen
+                  Champion für dieselbe Liga × Markt-Kombination.
+                </p>
+              )}
+            </div>
+
             <DataTable
               columns={columns}
               rows={perf.predictions ?? []}
