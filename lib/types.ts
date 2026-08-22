@@ -685,6 +685,9 @@ export interface PushBroadcast {
   sent_count: number;
   failed_count: number;
   sent_by_employee_id?: number | null;
+  deep_link_url?: string | null;
+  scheduled_at?: string | null;
+  sent_at?: string | null;
   created_at?: string | null;
   [key: string]: unknown;
 }
