@@ -7,7 +7,10 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
+import ArticleHistoryPanel from "@/components/ArticleHistoryPanel";
+import { useEmployeeNames } from "@/lib/useEmployeeNames";
 import type { EditorialArticle } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -50,10 +53,12 @@ export default function NewsArticleClient({ id }: { id: string }) {
     send_push: false,
     scheduled_at: null,
   });
+  const [showPreview, setShowPreview] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
+  const { employeeName } = useEmployeeNames();
 
   const load = useCallback(async () => {
     if (isNew) return;
@@ -159,13 +164,17 @@ export default function NewsArticleClient({ id }: { id: string }) {
         </h1>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "notfound" && <StateMessage title="Artikel nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Artikel konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage title="Artikel konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
       )}
 
       {state === "loaded" && (
@@ -187,73 +196,94 @@ export default function NewsArticleClient({ id }: { id: string }) {
               {article.push_sent_at && (
                 <p className="mt-2 text-xs text-neutral-400">Push gesendet am {article.push_sent_at}</p>
               )}
+              <p className="mt-2 text-xs text-neutral-400">Autor: {employeeName(article.author_employee_id)}</p>
             </Card>
           )}
 
-          <Card title="Inhalt">
-            <div className="space-y-3">
-              <div>
-                <label className={labelClass}>Titel</label>
-                <input className={inputClass} value={article.title ?? ""} onChange={(e) => field("title", e.target.value)} />
+          <Card
+            title="Inhalt"
+            action={
+              <Button variant="secondary" onClick={() => setShowPreview((v) => !v)}>
+                {showPreview ? "Bearbeiten" : "Vorschau"}
+              </Button>
+            }
+          >
+            {showPreview ? (
+              <div className="space-y-2 rounded-md border border-neutral-200 bg-neutral-50 p-4">
+                {article.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={article.image_url} alt="" className="max-h-48 w-full rounded-md object-cover" />
+                )}
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">{article.category}</p>
+                <h2 className="text-lg font-semibold text-neutral-900">{article.title || "(Kein Titel)"}</h2>
+                {article.summary && <p className="text-sm font-medium text-neutral-600">{article.summary}</p>}
+                <p className="whitespace-pre-wrap text-sm text-neutral-800">{article.body || "(Kein Text)"}</p>
               </div>
-              <div>
-                <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
-                  Zusammenfassung
-                  <InfoTooltip text="Kurzer Anrisstext, der z.B. in der Artikel-Liste angezeigt wird, bevor jemand den vollen Artikel öffnet." />
-                </label>
-                <textarea
-                  rows={2}
-                  className={inputClass}
-                  value={article.summary ?? ""}
-                  onChange={(e) => field("summary", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Text</label>
-                <textarea
-                  rows={8}
-                  className={inputClass}
-                  value={article.body ?? ""}
-                  onChange={(e) => field("body", e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            ) : (
+              <div className="space-y-3">
                 <div>
-                  <label className={labelClass}>Kategorie</label>
-                  <input className={inputClass} value={article.category ?? ""} onChange={(e) => field("category", e.target.value)} />
+                  <label className={labelClass}>Titel</label>
+                  <input className={inputClass} value={article.title ?? ""} onChange={(e) => field("title", e.target.value)} />
                 </div>
                 <div>
-                  <label className={labelClass}>Titelbild-URL</label>
-                  <input className={inputClass} value={article.image_url ?? ""} onChange={(e) => field("image_url", e.target.value)} />
+                  <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                    Zusammenfassung
+                    <InfoTooltip text="Kurzer Anrisstext, der z.B. in der Artikel-Liste angezeigt wird, bevor jemand den vollen Artikel öffnet." />
+                  </label>
+                  <textarea
+                    rows={2}
+                    className={inputClass}
+                    value={article.summary ?? ""}
+                    onChange={(e) => field("summary", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Text</label>
+                  <textarea
+                    rows={8}
+                    className={inputClass}
+                    value={article.body ?? ""}
+                    onChange={(e) => field("body", e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Kategorie</label>
+                    <input className={inputClass} value={article.category ?? ""} onChange={(e) => field("category", e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Titelbild-URL</label>
+                    <input className={inputClass} value={article.image_url ?? ""} onChange={(e) => field("image_url", e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                    Veröffentlichung planen (optional)
+                    <InfoTooltip text="Der Artikel wird automatisch zu diesem Zeitpunkt veröffentlicht, ohne dass jemand manuell eingreifen muss." />
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className={inputClass}
+                    value={article.scheduled_at ? article.scheduled_at.slice(0, 16) : ""}
+                    onChange={(e) => field("scheduled_at", e.target.value ? new Date(e.target.value).toISOString() : null)}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-4 pt-1">
+                  <label className="flex items-center gap-2 text-sm text-neutral-600">
+                    <input type="checkbox" checked={article.homepage_feature ?? false} onChange={(e) => field("homepage_feature", e.target.checked)} />
+                    Homepage-Feature
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-neutral-600">
+                    <input type="checkbox" checked={article.breaking ?? false} onChange={(e) => field("breaking", e.target.checked)} />
+                    Breaking
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-neutral-600">
+                    <input type="checkbox" checked={article.send_push ?? false} onChange={(e) => field("send_push", e.target.checked)} />
+                    Push bei Veröffentlichung senden
+                  </label>
                 </div>
               </div>
-              <div>
-                <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
-                  Veröffentlichung planen (optional)
-                  <InfoTooltip text="Der Artikel wird automatisch zu diesem Zeitpunkt veröffentlicht, ohne dass jemand manuell eingreifen muss." />
-                </label>
-                <input
-                  type="datetime-local"
-                  className={inputClass}
-                  value={article.scheduled_at ? article.scheduled_at.slice(0, 16) : ""}
-                  onChange={(e) => field("scheduled_at", e.target.value ? new Date(e.target.value).toISOString() : null)}
-                />
-              </div>
-              <div className="flex flex-wrap gap-4 pt-1">
-                <label className="flex items-center gap-2 text-sm text-neutral-600">
-                  <input type="checkbox" checked={article.homepage_feature ?? false} onChange={(e) => field("homepage_feature", e.target.checked)} />
-                  Homepage-Feature
-                </label>
-                <label className="flex items-center gap-2 text-sm text-neutral-600">
-                  <input type="checkbox" checked={article.breaking ?? false} onChange={(e) => field("breaking", e.target.checked)} />
-                  Breaking
-                </label>
-                <label className="flex items-center gap-2 text-sm text-neutral-600">
-                  <input type="checkbox" checked={article.send_push ?? false} onChange={(e) => field("send_push", e.target.checked)} />
-                  Push bei Veröffentlichung senden
-                </label>
-              </div>
-            </div>
+            )}
 
             {error && (
               <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -267,6 +297,8 @@ export default function NewsArticleClient({ id }: { id: string }) {
               </Button>
             </div>
           </Card>
+
+          {!isNew && <ArticleHistoryPanel area="news" objectId={id} />}
         </>
       )}
     </div>

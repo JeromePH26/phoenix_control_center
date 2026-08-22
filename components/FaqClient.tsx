@@ -6,8 +6,10 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
+import ArticleHistoryPanel from "@/components/ArticleHistoryPanel";
 import type { FaqArticle } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -40,6 +42,7 @@ export default function FaqClient() {
   const [editing, setEditing] = useState<Partial<FaqArticle> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -105,7 +108,7 @@ export default function FaqClient() {
     {
       header: "",
       cell: (a) => (
-        <Button variant="secondary" onClick={() => { setEditing(a); setError(null); }}>
+        <Button variant="secondary" onClick={() => { setEditing(a); setError(null); setShowPreview(false); }}>
           Bearbeiten
         </Button>
       ),
@@ -123,21 +126,26 @@ export default function FaqClient() {
           <p className="text-sm text-neutral-400">Wissensdatenbank-Artikel, sortiert nach Kategorie und Position (Reihenfolge).</p>
         </div>
         <Button
-          onClick={() =>
-            setEditing({ title: "", body: "", category: "allgemein", position: 0, status: "DRAFT" })
-          }
+          onClick={() => {
+            setEditing({ title: "", body: "", category: "allgemein", position: 0, status: "DRAFT" });
+            setShowPreview(false);
+          }}
         >
           Neuer Eintrag
         </Button>
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "unreachable" && (
-          <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+          <StateMessage
+            title="PHÖNIX Backend nicht erreichbar"
+            description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
+          />
         )}
         {state === "error" && (
-          <StateMessage title="Einträge konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Einträge konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <DataTable columns={columns} rows={articles} rowKey={(a) => String(a.id)} emptyMessage="Noch keine FAQ-Einträge" />
@@ -147,6 +155,19 @@ export default function FaqClient() {
       {editing && (
         <Modal title={editing.id === undefined ? "Neuer FAQ-Eintrag" : "FAQ-Eintrag bearbeiten"} onClose={() => setEditing(null)}>
           <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="flex justify-end">
+              <Button type="button" variant="secondary" onClick={() => setShowPreview((v) => !v)}>
+                {showPreview ? "Bearbeiten" : "Vorschau"}
+              </Button>
+            </div>
+            {showPreview ? (
+              <div className="space-y-1 rounded-md border border-neutral-200 bg-neutral-50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">{editing.category || "allgemein"}</p>
+                <h3 className="text-base font-semibold text-neutral-900">{editing.title || "(Kein Titel)"}</h3>
+                <p className="whitespace-pre-wrap text-sm text-neutral-700">{editing.body || "(Kein Text)"}</p>
+              </div>
+            ) : (
+              <>
             <div>
               <label className={labelClass}>Titel</label>
               <input
@@ -197,6 +218,8 @@ export default function FaqClient() {
                 </select>
               </div>
             </div>
+              </>
+            )}
 
             {error && (
               <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -213,6 +236,11 @@ export default function FaqClient() {
               </Button>
             </div>
           </form>
+          {editing.id !== undefined && (
+            <div className="mt-4">
+              <ArticleHistoryPanel area="faq" objectId={editing.id} />
+            </div>
+          )}
         </Modal>
       )}
     </div>
