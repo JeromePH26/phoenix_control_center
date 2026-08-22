@@ -8,11 +8,33 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { humanizeCode } from "@/lib/presentation";
 import type { SettlementJob } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
 
 const POLL_INTERVAL_MS = 4000;
+
+type DailyScanJob = {
+  jobId: number;
+  status: string;
+  current_step?: string | null;
+  processed?: number | null;
+  published?: number | null;
+  error?: string | null;
+};
+
+function berlinToday(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
 
 function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   if (status === "completed") return "green";
@@ -22,13 +44,28 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
 }
 
 const JOB_STATUS_LABEL: Record<string, string> = {
+  started: "Gestartet",
   completed: "Fertig",
   running: "Läuft",
   failed: "Fehlgeschlagen",
   pending: "Wartet",
+  rate_limited: "API-Limit erreicht",
 };
 function jobStatusLabel(status: string): string {
-  return JOB_STATUS_LABEL[status] ?? status;
+  return JOB_STATUS_LABEL[status] ?? humanizeCode(status);
+}
+
+const SCAN_STEP_LABEL: Record<string, string> = {
+  created: "Wartet auf Start",
+  phase_one: "Spiele und Grunddaten werden geladen",
+  phase_two: "Detaildaten werden analysiert",
+  engine: "Wahrscheinlichkeiten werden berechnet",
+  finalization: "Tipps werden veröffentlicht",
+  completed: "Abgeschlossen",
+};
+function scanStepLabel(step: string | null | undefined): string {
+  if (!step) return "Wird vorbereitet";
+  return SCAN_STEP_LABEL[step] ?? humanizeCode(step);
 }
 
 export default function FootballSettlementClient() {
@@ -44,9 +81,20 @@ export default function FootballSettlementClient() {
   const [startError, setStartError] = useState<string | null>(null);
   const [candidateCount, setCandidateCount] = useState<number | null>(null);
   const [candidateLoading, setCandidateLoading] = useState(false);
+  const [scanDate, setScanDate] = useState(berlinToday);
+  const [scanLimit, setScanLimit] = useState(20);
+  const [scanStarting, setScanStarting] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanJob, setScanJob] = useState<DailyScanJob | null>(null);
+  const [settlementDate, setSettlementDate] = useState(berlinToday);
+  const [confirmTipSettlement, setConfirmTipSettlement] = useState(false);
+  const [tipsSettling, setTipsSettling] = useState(false);
+  const [tipSettlementError, setTipSettlementError] = useState<string | null>(null);
+  const [tipSettlementResult, setTipSettlementResult] = useState<Record<string, unknown> | null>(null);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isRunning = jobs.some((j) => j.status === "running");
+  const scanActive = !!scanJob && !["completed", "failed"].includes(scanJob.status);
 
   const loadCoverage = useCallback(async () => {
     setCoverageState("loading");
@@ -133,6 +181,51 @@ export default function FootballSettlementClient() {
     };
   }, [minHours]);
 
+  useEffect(() => {
+    if (!scanJob || ["completed", "failed"].includes(scanJob.status)) return;
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const res = await fetch(`/api/football/daily-scan/${scanJob.jobId}`);
+        const data = await res.json().catch(() => null);
+        if (!cancelled && res.ok && data) {
+          setScanJob((current) => (current ? { ...current, ...data, jobId: current.jobId } : current));
+        }
+      } catch {
+        // The action itself keeps running server-side; retain the last known status.
+      }
+    };
+    void refresh();
+    const timer = setInterval(refresh, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [scanJob?.jobId, scanJob?.status]);
+
+  async function handleStartScan() {
+    setScanStarting(true);
+    setScanError(null);
+    setScanJob(null);
+    try {
+      const res = await fetch("/api/football/daily-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: scanDate, limit: scanLimit, minimumDataQuality: 0 }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || typeof data?.jobId !== "number") {
+        setScanError(data?.error ?? `Tagesscan konnte nicht gestartet werden (Status ${res.status}).`);
+        return;
+      }
+      setScanJob({ jobId: data.jobId, status: data.status ?? "started" });
+    } catch {
+      setScanError("Verbindung zum Backend fehlgeschlagen.");
+    } finally {
+      setScanStarting(false);
+    }
+  }
+
   async function handleStart() {
     setStarting(true);
     setStartError(null);
@@ -158,6 +251,31 @@ export default function FootballSettlementClient() {
     }
   }
 
+  async function handleTipSettlement() {
+    setTipsSettling(true);
+    setTipSettlementError(null);
+    try {
+      const res = await fetch("/api/football/settlement/tips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: settlementDate }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setTipSettlementError(data?.error ?? `Abrechnung konnte nicht gestartet werden (Status ${res.status}).`);
+        return;
+      }
+      setTipSettlementResult(data && typeof data === "object" ? data : null);
+      setConfirmTipSettlement(false);
+      void loadCoverage();
+      void loadJobs();
+    } catch {
+      setTipSettlementError("Verbindung zum Backend fehlgeschlagen.");
+    } finally {
+      setTipsSettling(false);
+    }
+  }
+
   const columns: Column<SettlementJob>[] = [
     { header: "ID", cell: (j) => <span className="font-medium text-neutral-900">#{j.id}</span> },
     { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{jobStatusLabel(j.status)}</Badge> },
@@ -180,13 +298,43 @@ export default function FootballSettlementClient() {
     <div className="space-y-6">
       <div>
         <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
-          Settlement
-          <InfoTooltip text="Settlement = Endergebnisse von Spielen nachträglich eintragen, damit Tipps als richtig/falsch abgerechnet werden können." />
+          Football-Automation
+          <InfoTooltip text="Hier steuerst du Scan, Ergebnisabgleich und die Tipp-Abrechnung manuell – ohne Railway oder technische Befehle." />
         </h1>
         <p className="text-sm text-neutral-400">
-          Ergänzt Ergebnis/Status bereits eingefrorener Pre-Match-Snapshots (der zuvor gespeicherte Stand vor Anpfiff). Keine erneute Analyse historischer Matches.
+          Drei getrennte, sichere Schritte: Tages-Scan für neue Analysen, Ergebnis-Backfill für beendete Spiele und abschließend die Tipp-Abrechnung.
         </p>
       </div>
+
+      <Card
+        title="Tagesscan starten"
+        action={<span className="text-xs text-neutral-400">Lädt Spiele, analysiert sie und veröffentlicht neue Tipps</span>}
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            Spieltag
+            <input type="date" value={scanDate} onChange={(e) => setScanDate(e.target.value)} className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900" />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            Max. Spiele
+            <input type="number" min={1} max={20} value={scanLimit} onChange={(e) => setScanLimit(Math.min(20, Math.max(1, Number(e.target.value) || 1)))} className="w-28 rounded-md border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900" />
+          </label>
+          <Button onClick={handleStartScan} disabled={scanStarting || scanActive}>
+            {scanStarting ? "Wird gestartet…" : scanActive ? "Scan läuft bereits…" : "Tagesscan starten"}
+          </Button>
+        </div>
+        <p className="mt-3 text-xs text-neutral-500">Es werden nur freigegebene Ligen verarbeitet. Der Qualitätsfilter ist bewusst deaktiviert, damit alle verfügbaren Analysen gespeichert werden.</p>
+        {scanJob && (
+          <div className="mt-3 rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+            <span className="font-medium">Scan #{scanJob.jobId}: {jobStatusLabel(scanJob.status)}</span>
+            <span className="ml-2 text-neutral-500">{scanStepLabel(scanJob.current_step)}</span>
+            {typeof scanJob.processed === "number" && <span className="ml-2 text-neutral-500">· {scanJob.processed} verarbeitet</span>}
+            {typeof scanJob.published === "number" && <span className="ml-2 text-neutral-500">· {scanJob.published} veröffentlicht</span>}
+            {scanJob.error && <p className="mt-1 text-red-600">{scanJob.error}</p>}
+          </div>
+        )}
+        {scanError && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{scanError}</p>}
+      </Card>
 
       <Card
         title={
@@ -204,6 +352,26 @@ export default function FootballSettlementClient() {
           <StateMessage title="Abdeckung konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
         )}
         {coverageState === "loaded" && <KeyValueList data={coverage} />}
+      </Card>
+
+      <Card
+        title="Tipps abrechnen"
+        action={<span className="text-xs text-neutral-400">Bucht Gewinn, Verlust, Push oder ungültig für bereits beendete Tipps</span>}
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            Spieltag
+            <input type="date" value={settlementDate} onChange={(e) => setSettlementDate(e.target.value)} className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900" />
+          </label>
+          <Button variant="secondary" onClick={() => { setConfirmTipSettlement(true); setTipSettlementError(null); }} disabled={tipsSettling}>
+            Tipps dieses Tages abrechnen
+          </Button>
+        </div>
+        <p className="mt-3 text-xs text-neutral-500">Die Abrechnung ruft frische Endstände ab und verändert nur bereits beendete Tipps. Laufende oder verschobene Spiele bleiben offen.</p>
+        {tipSettlementResult && (
+          <div className="mt-3"><KeyValueList data={{ "Gefundene offene Tipps": tipSettlementResult.pendingFound, Abgerechnet: tipSettlementResult.settled, Übersprungen: tipSettlementResult.skipped, "Tages-Kombis": Array.isArray(tipSettlementResult.dailyCombos) ? tipSettlementResult.dailyCombos.length : 0 }} /></div>
+        )}
+        {tipSettlementError && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{tipSettlementError}</p>}
       </Card>
 
       <Card
@@ -268,6 +436,18 @@ export default function FootballSettlementClient() {
           <DataTable columns={columns} rows={jobs} rowKey={(j) => String(j.id)} emptyMessage="Noch keine Backfill-Läufe" />
         )}
       </Card>
+
+      {confirmTipSettlement && (
+        <ConfirmDialog
+          title="Tipps abrechnen"
+          description={`PHÖNIX prüft alle offenen Tipps vom ${settlementDate} gegen aktuelle Endstände und bucht Gewinn, Verlust oder Push. Bereits abgerechnete Tipps bleiben unverändert.`}
+          confirmLabel="Jetzt abrechnen"
+          busy={tipsSettling}
+          error={tipSettlementError}
+          onConfirm={handleTipSettlement}
+          onClose={() => setConfirmTipSettlement(false)}
+        />
+      )}
     </div>
   );
 }

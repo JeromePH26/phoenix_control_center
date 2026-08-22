@@ -28,7 +28,7 @@ export const NAV_TREE: NavGroup[] = [
       { label: "Wappen & Assets", href: "/football/assets", enabled: true },
       { label: "Whitelist", href: "/football/leagues", enabled: true },
       { label: "Datenqualität", href: "/football/data-quality", enabled: true },
-      { label: "Settlement", href: "/football/settlement", enabled: true },
+      { label: "Football-Automation", href: "/football/settlement", enabled: true },
     ],
   },
   {
