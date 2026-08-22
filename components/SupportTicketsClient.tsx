@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import type { SupportTicket } from "@/lib/types";
 
@@ -70,6 +71,17 @@ function fmt(value: unknown): string {
   return String(value);
 }
 
+function formatDateTime(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "–";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${date.toLocaleTimeString("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
+}
+
 const inputClass =
   "rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
@@ -123,8 +135,8 @@ export default function SupportTicketsClient() {
     { header: "Status", cell: (t) => <Badge tone={statusTone(t.status)}>{ticketStatusLabel(t.status)}</Badge> },
     { header: "Priorität", info: "Wie dringend das Ticket bearbeitet werden sollte.", cell: (t) => <Badge tone={priorityTone(t.priority)}>{priorityLabel(t.priority)}</Badge> },
     { header: "Zugewiesen", info: "Interne Nummer des Mitarbeiters, der sich um dieses Ticket kümmert.", cell: (t) => fmt(t.assigned_employee_id) },
-    { header: "Erstellt", cell: (t) => fmt(t.created_at) },
-    { header: "Aktualisiert", cell: (t) => fmt(t.updated_at) },
+    { header: "Erstellt", cell: (t) => formatDateTime(t.created_at) },
+    { header: "Aktualisiert", cell: (t) => formatDateTime(t.updated_at) },
   ];
 
   const { title, description } = TITLES[category] ?? { title: "Tickets", description: `Kategorie: ${category}` };
@@ -156,12 +168,16 @@ export default function SupportTicketsClient() {
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "unreachable" && (
-          <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+          <StateMessage
+            title="PHÖNIX Backend nicht erreichbar"
+            description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
+          />
         )}
         {state === "error" && (
-          <StateMessage title="Tickets konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Tickets konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <DataTable

@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
+import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AssignableEmployee, SupportTicket, SupportTicketMessage } from "@/lib/types";
 
@@ -51,9 +52,15 @@ function categoryLabel(category: string): string {
 const selectClass =
   "rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-phoenix-gold focus:outline-none focus:ring-1 focus:ring-phoenix-gold";
 
-function fmt(value: unknown): string {
+function formatDateTime(value: unknown): string {
   if (value === null || value === undefined || value === "") return "–";
-  return String(value);
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${date.toLocaleTimeString("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
 }
 
 export default function SupportTicketDetailClient({ id }: { id: string }) {
@@ -167,13 +174,17 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
         </h1>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "notfound" && <StateMessage title="Ticket nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Ticket konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage title="Ticket konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
       )}
 
       {state === "loaded" && ticket && (
@@ -189,8 +200,8 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
                 Gerätemodell: ticket.device_model,
                 "PHÖNIX Match ID": ticket.match_id,
                 Screen: ticket.screen,
-                Erstellt: ticket.created_at,
-                Aktualisiert: ticket.updated_at,
+                Erstellt: formatDateTime(ticket.created_at),
+                Aktualisiert: formatDateTime(ticket.updated_at),
               }}
               info={{
                 "Gerät (Installation-ID)": "Eindeutige, anonyme Kennung des Geräts, von dem aus das Ticket geschickt wurde (kein Nutzerkonto nötig).",
@@ -298,7 +309,7 @@ export default function SupportTicketDetailClient({ id }: { id: string }) {
                   <div className="mb-1 flex items-center gap-2 text-xs text-neutral-500">
                     <span className="font-medium">{m.author_type === "employee" ? "Mitarbeiter" : "Nutzer"}</span>
                     {m.internal_note && <Badge tone="gold">Intern</Badge>}
-                    <span>{fmt(m.created_at)}</span>
+                    <span>{formatDateTime(m.created_at)}</span>
                   </div>
                   <p className="whitespace-pre-wrap text-neutral-800">{m.message}</p>
                 </div>
