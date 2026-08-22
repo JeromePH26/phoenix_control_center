@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
+import LoadingState from "@/components/ui/LoadingState";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AppControlStatus, AppControlStatusValue } from "@/lib/types";
@@ -26,6 +27,17 @@ function labelFor(status: string): string {
   return STATUSES.find((s) => s.value === status)?.label ?? status;
 }
 
+function formatDateTime(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return `${date.toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · ${date.toLocaleTimeString("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+  })} Uhr`;
+}
+
 export default function AppControlStatusClient() {
   const [status, setStatus] = useState<AppControlStatus | null>(null);
   const [state, setState] = useState<LoadState>("loading");
@@ -33,6 +45,7 @@ export default function AppControlStatusClient() {
   const [target, setTarget] = useState<AppControlStatusValue | null>(null);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
+  const [maintenanceUntil, setMaintenanceUntil] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +81,7 @@ export default function AppControlStatusClient() {
     setTarget(value);
     setReason("");
     setMessage(status?.message ?? "");
+    setMaintenanceUntil(status?.maintenance_until ? status.maintenance_until.slice(0, 16) : "");
     setError(null);
   }
 
@@ -80,7 +94,12 @@ export default function AppControlStatusClient() {
       const res = await fetch("/api/app-control/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: target, reason: reason.trim(), message: message.trim() || undefined }),
+        body: JSON.stringify({
+          status: target,
+          reason: reason.trim(),
+          message: message.trim() || undefined,
+          maintenanceUntil: target === "MAINTENANCE" && maintenanceUntil ? new Date(maintenanceUntil).toISOString() : null,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -111,17 +130,26 @@ export default function AppControlStatusClient() {
           Zentraler App-Status: Aktiv (normaler Betrieb) / Wartungsmodus (App zeigt Nutzern einen Hinweis) / Abgeschaltet.
           Die App fragt diesen Status regelmäßig beim Start und alle 5 Minuten ab.
         </p>
+        <p className="mt-1 rounded-md border border-dashed border-neutral-300 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+          Betrifft ausschließlich die App-Oberfläche der Nutzer. Backend-Arbeit (Daily-Pipeline, Settlement,
+          Live-Übertragung) läuft unabhängig von diesem Status weiter — auch bei &quot;Abgeschaltet&quot; muss die
+          Arbeit separat gestoppt werden (App Control → Module).
+        </p>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "forbidden" && (
         <StateMessage title="Keine Berechtigung" description="Für dieses Konto liegt keine Berechtigung für App Control vor." />
       )}
       {state === "error" && (
-        <StateMessage title="Status konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage title="Status konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
       )}
 
       {state === "loaded" && status && (
@@ -130,13 +158,24 @@ export default function AppControlStatusClient() {
             <KeyValueList
               data={{
                 Nachricht: status.message ?? null,
-                "Zuletzt geändert": status.updated_at ?? null,
+                "Geplantes Ende": status.status === "MAINTENANCE" ? formatDateTime(status.maintenance_until) : null,
+                "Zuletzt geändert": formatDateTime(status.updated_at),
                 "Geändert von": status.updated_by ?? null,
               }}
               info={{
                 Nachricht: "Text, der Nutzern in der App angezeigt wird, z.B. ein Hinweis während der Wartung.",
+                "Geplantes Ende": "Rein informativ - schaltet nicht automatisch zurück auf Aktiv.",
               }}
             />
+            {status.status === "MAINTENANCE" && status.message && (
+              <div className="mt-3">
+                <p className="mb-1 text-xs font-medium text-neutral-600">Vorschau (Nutzeransicht)</p>
+                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+                  <p className="mb-1 font-medium text-neutral-900">Wartungsarbeiten</p>
+                  <p>{status.message}</p>
+                </div>
+              </div>
+            )}
           </Card>
 
           <Card title="Status ändern" action={<span className="text-xs text-neutral-400">Jede Änderung erfordert einen Grund</span>}>
@@ -183,6 +222,32 @@ export default function AppControlStatusClient() {
                 className={inputClass}
               />
             </div>
+            {message.trim() && (
+              <div>
+                <p className="mb-1 text-xs font-medium text-neutral-600">Vorschau (Nutzeransicht)</p>
+                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+                  <p className="mb-1 font-medium text-neutral-900">
+                    {target === "MAINTENANCE" ? "Wartungsarbeiten" : "Hinweis"}
+                  </p>
+                  <p>{message}</p>
+                </div>
+              </div>
+            )}
+            {target === "MAINTENANCE" && (
+              <div>
+                <label htmlFor="app-status-until" className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                  Geplantes Ende (optional)
+                  <InfoTooltip text="Rein informativ - schaltet nicht automatisch zurück auf Aktiv, muss danach manuell zurückgesetzt werden." />
+                </label>
+                <input
+                  id="app-status-until"
+                  type="datetime-local"
+                  value={maintenanceUntil}
+                  onChange={(e) => setMaintenanceUntil(e.target.value)}
+                  className={`${inputClass} w-64`}
+                />
+              </div>
+            )}
 
             {error && (
               <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">

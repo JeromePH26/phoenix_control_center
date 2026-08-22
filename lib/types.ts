@@ -344,6 +344,9 @@ export interface AppControlStatus {
   message?: string | null;
   updated_at?: string | null;
   updated_by?: string | null;
+  // Section 22 (AN2): "geplantes Ende" - rein informativ, kein
+  // automatischer Rückschalter dahinter.
+  maintenance_until?: string | null;
 }
 
 export interface SettlementJob {
