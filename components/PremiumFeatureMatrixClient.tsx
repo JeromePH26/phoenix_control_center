@@ -5,6 +5,8 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
+import PreparedBadge from "@/components/ui/PreparedBadge";
 import StateMessage from "@/components/ui/StateMessage";
 import type { PremiumFeature } from "@/lib/types";
 
@@ -117,20 +119,26 @@ export default function PremiumFeatureMatrixClient() {
         <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
           Feature Matrix
           <InfoTooltip text="Legt fest, welche App-Funktionen kostenlos, nur mit Premium oder für niemanden verfügbar sind." />
+          <PreparedBadge />
         </h1>
         <p className="text-sm text-neutral-400">
           Einstufung bereits gebauter Funktionen in FREE (kostenlos) / PREMIUM (kostenpflichtig) / DISABLED
-          (deaktiviert). Wird von der App noch nicht ausgelesen — diese Seite ist vorbereitet für später.
+          (deaktiviert). Wird von der App noch nicht ausgelesen. Entitlements, Paywall-Vorschau und eine belastbare
+          Feature-Zuordnung pro Nutzer setzen ein echtes PHÖNIX-Nutzerkonto voraus, das es noch nicht gibt.
         </p>
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "unreachable" && (
-          <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+          <StateMessage
+            title="PHÖNIX Backend nicht erreichbar"
+            description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
+          />
         )}
         {state === "error" && (
-          <StateMessage title="Feature Matrix konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Feature Matrix konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <DataTable columns={columns} rows={features} rowKey={(f) => f.feature_key} emptyMessage="Keine Features definiert" />

@@ -7,6 +7,8 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
+import PreparedBadge from "@/components/ui/PreparedBadge";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AdCampaign } from "@/lib/types";
 
@@ -85,9 +87,11 @@ export default function CampaignsListClient({ slotFilter }: { slotFilter?: strin
           <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
             Kampagnen
             <InfoTooltip text="Werbeanzeigen, die in der App an bestimmten Stellen (Slots) eingeblendet werden." />
+            <PreparedBadge />
           </h1>
           <p className="text-sm text-neutral-400">
-            Werbe-Slots (Anzeigeplätze) sind serverseitig fest vordefiniert. Noch nicht in der App verbunden.
+            Werbe-Slots (Anzeigeplätze) sind serverseitig fest vordefiniert. Noch nicht in der App verbunden — hier
+            angelegte Kampagnen werden aktuell nirgends ausgespielt.
           </p>
         </div>
         <Link href="/advertising/campaigns/new">
@@ -96,12 +100,16 @@ export default function CampaignsListClient({ slotFilter }: { slotFilter?: strin
       </div>
 
       <Card>
-        {state === "loading" && <p className="py-8 text-center text-sm text-neutral-400">Wird geladen…</p>}
+        {state === "loading" && <LoadingState />}
         {state === "unreachable" && (
-          <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+          <StateMessage
+            title="PHÖNIX Backend nicht erreichbar"
+            description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+            onRetry={load}
+          />
         )}
         {state === "error" && (
-          <StateMessage title="Kampagnen konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+          <StateMessage title="Kampagnen konnten nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
         )}
         {state === "loaded" && (
           <DataTable columns={columns} rows={campaigns} rowKey={(c) => String(c.id)} emptyMessage="Noch keine Kampagnen" />

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import PreparedBadge from "@/components/ui/PreparedBadge";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -40,6 +41,7 @@ export default async function AdSlotsPage() {
         <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
           Werbeflächen
           <InfoTooltip text="Slot = feste Stelle in der App, an der Werbung angezeigt werden kann (z.B. auf der Startseite)." />
+          <PreparedBadge />
         </h1>
         <p className="text-sm text-neutral-400">
           Fest vordefinierte Werbeplätze (Slots) — der Server kann das Layout nicht frei ändern. Noch nicht in der App verbunden.

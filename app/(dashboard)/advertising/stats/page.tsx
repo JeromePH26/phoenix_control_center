@@ -3,6 +3,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import PreparedBadge from "@/components/ui/PreparedBadge";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -53,8 +54,11 @@ export default async function AdStatsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Statistiken</h1>
-        <p className="text-sm text-neutral-400">Impressions und Klicks je Kampagne.</p>
+        <h1 className="flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          Statistiken
+          <PreparedBadge />
+        </h1>
+        <p className="text-sm text-neutral-400">Impressions und Klicks je Kampagne — noch keine echten App-Nutzer dahinter.</p>
       </div>
 
       {errorState === "unreachable" && (

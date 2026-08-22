@@ -670,6 +670,8 @@ export interface AdCampaign {
   target_audience: AdAudience | string;
   impressions: number;
   clicks: number;
+  budget_amount?: number | string | null;
+  frequency_cap_per_day?: number | null;
   created_by_employee_id?: number | null;
   created_at?: string | null;
   updated_at?: string | null;

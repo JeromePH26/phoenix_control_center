@@ -7,6 +7,8 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import LoadingState from "@/components/ui/LoadingState";
+import PreparedBadge from "@/components/ui/PreparedBadge";
 import StateMessage from "@/components/ui/StateMessage";
 import type { AdCampaign } from "@/lib/types";
 
@@ -43,6 +45,8 @@ export default function CampaignDetailClient({ id }: { id: string }) {
     start_date: null,
     end_date: null,
     target_country: null,
+    budget_amount: null,
+    frequency_cap_per_day: null,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +98,8 @@ export default function CampaignDetailClient({ id }: { id: string }) {
           targetCountry: campaign.target_country || null,
           startDate: campaign.start_date || null,
           endDate: campaign.end_date || null,
+          budgetAmount: campaign.budget_amount || null,
+          frequencyCapPerDay: campaign.frequency_cap_per_day || null,
         }
       : {
           name: campaign.name,
@@ -104,6 +110,8 @@ export default function CampaignDetailClient({ id }: { id: string }) {
           targetCountry: campaign.target_country || null,
           startDate: campaign.start_date || null,
           endDate: campaign.end_date || null,
+          budgetAmount: campaign.budget_amount || null,
+          frequencyCapPerDay: campaign.frequency_cap_per_day || null,
         };
     try {
       const res = await fetch(isNew ? "/api/advertising/campaigns" : `/api/advertising/campaigns/${encodeURIComponent(id)}`, {
@@ -139,16 +147,23 @@ export default function CampaignDetailClient({ id }: { id: string }) {
         <Link href="/advertising/campaigns" className="text-xs text-neutral-400 hover:text-neutral-600">
           ← Zurück zu Kampagnen
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900">{isNew ? "Neue Kampagne" : "Kampagne bearbeiten"}</h1>
+        <h1 className="mt-1 flex items-center gap-1.5 text-xl font-semibold text-neutral-900">
+          {isNew ? "Neue Kampagne" : "Kampagne bearbeiten"}
+          <PreparedBadge />
+        </h1>
       </div>
 
-      {state === "loading" && <p className="text-sm text-neutral-400">Wird geladen…</p>}
+      {state === "loading" && <LoadingState />}
       {state === "notfound" && <StateMessage title="Kampagne nicht gefunden" description="Für diese ID liegen keine Daten vor." />}
       {state === "unreachable" && (
-        <StateMessage title="PHÖNIX Backend nicht erreichbar" description="Die Verbindung zum Backend konnte nicht hergestellt werden." />
+        <StateMessage
+          title="PHÖNIX Backend nicht erreichbar"
+          description="Die Verbindung zum Backend konnte nicht hergestellt werden."
+          onRetry={load}
+        />
       )}
       {state === "error" && (
-        <StateMessage title="Kampagne konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." />
+        <StateMessage title="Kampagne konnte nicht geladen werden" description="Ein unerwarteter Fehler ist aufgetreten." onRetry={load} />
       )}
 
       {state === "loaded" && (
@@ -176,6 +191,10 @@ export default function CampaignDetailClient({ id }: { id: string }) {
           )}
 
           <Card title="Details" action={!isNew ? <Badge tone={campaign.active ? "green" : "neutral"}>{campaign.active ? "Aktiv" : "Pausiert"}</Badge> : undefined}>
+            <p className="mb-3 rounded-md border border-dashed border-neutral-300 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+              Diese Kampagne wird noch nirgends in der App ausgespielt — Budget und Frequency Cap sind reine
+              Planungsangaben, es findet keine echte Ausgaben- oder Impressions-Deckelung statt.
+            </p>
             <div className="space-y-3">
               <div>
                 <label className={labelClass}>Name</label>
@@ -238,6 +257,36 @@ export default function CampaignDetailClient({ id }: { id: string }) {
                 <div>
                   <label className={labelClass}>Land (optional)</label>
                   <input className={inputClass} value={campaign.target_country ?? ""} onChange={(e) => field("target_country", e.target.value || null)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                    Budget (EUR, optional)
+                    <InfoTooltip text="Geplantes Werbebudget für diese Kampagne — reine Planungsangabe, aktuell kein Ausgaben-Tracking dahinter." />
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    className={inputClass}
+                    value={campaign.budget_amount ?? ""}
+                    onChange={(e) => field("budget_amount", e.target.value ? Number(e.target.value) : null)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-medium text-neutral-600">
+                    Frequency Cap (Anzeigen/Tag/Nutzer, optional)
+                    <InfoTooltip text="Wie oft dieselbe Person die Werbung höchstens pro Tag sehen soll — reine Planungsangabe, aktuell keine echte Deckelung dahinter." />
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="1"
+                    className={inputClass}
+                    value={campaign.frequency_cap_per_day ?? ""}
+                    onChange={(e) => field("frequency_cap_per_day", e.target.value ? Number(e.target.value) : null)}
+                  />
                 </div>
               </div>
               <label className="flex items-center gap-2 text-sm text-neutral-600">
