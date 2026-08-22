@@ -12,6 +12,7 @@ import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useLeagueNames } from "@/lib/useLeagueNames";
+import { runStatusLabel, triggerLabel } from "@/lib/presentation";
 import type { EligibilityAudit, LearningRun, ModelLabOverview } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -21,16 +22,6 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   if (status === "failed") return "red";
   if (status === "running") return "gold";
   return "neutral";
-}
-
-const RUN_STATUS_LABEL: Record<string, string> = {
-  completed: "Fertig",
-  running: "Läuft",
-  failed: "Fehlgeschlagen",
-  pending: "Wartet",
-};
-function runStatusLabel(status: string): string {
-  return RUN_STATUS_LABEL[status] ?? status;
 }
 
 function fmt(value: unknown): string {
@@ -134,12 +125,7 @@ export default function LearningClient() {
     { header: "Status", cell: (r) => <Badge tone={statusTone(r.status)}>{runStatusLabel(r.status)}</Badge> },
     {
       header: "Auslöser",
-      cell: (r) =>
-        r.trigger_type === "manual"
-          ? "Manuell gestartet"
-          : r.trigger_type === "scheduled"
-            ? "Automatisch nach Zeitplan"
-            : fmt(r.trigger_type),
+      cell: (r) => triggerLabel(r.trigger_type),
     },
     { header: "Ligen / Märkte", cell: (r) => `${fmt(r.leagues_processed)} / ${fmt(r.markets_processed)}` },
     { header: "Challenger erstellt", cell: (r) => fmt(r.challengers_created) },

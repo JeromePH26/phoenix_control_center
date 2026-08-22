@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { searchTypeLabel } from "@/lib/presentation";
 import type { SearchResult } from "@/lib/types";
 
 export default function SearchBox() {
@@ -9,7 +12,9 @@ export default function SearchBox() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -26,36 +31,80 @@ export default function SearchBox() {
     if (!q) {
       setResults(null);
       setError(false);
+      setLoading(false);
+      setActiveIndex(-1);
       return;
     }
 
     setLoading(true);
     setError(false);
+    setActiveIndex(-1);
+    const controller = new AbortController();
     const handle = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal });
         if (!res.ok) {
           setError(true);
           setResults(null);
           return;
         }
         const data = await res.json();
-        setResults(Array.isArray(data) ? data : []);
-      } catch {
+        const rawResults = Array.isArray(data) ? data : data?.results;
+        setResults(
+          Array.isArray(rawResults)
+            ? rawResults.filter(
+                (item): item is SearchResult =>
+                  item && typeof item.id !== "undefined" && typeof item.label === "string" && typeof item.url === "string",
+              )
+            : [],
+        );
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
         setError(true);
         setResults(null);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, 300);
 
-    return () => clearTimeout(handle);
+    return () => {
+      clearTimeout(handle);
+      controller.abort();
+    };
   }, [query]);
 
   const grouped = (results ?? []).reduce<Record<string, SearchResult[]>>((acc, r) => {
     (acc[r.type] ??= []).push(r);
     return acc;
   }, {});
+  const flatResults = useMemo(() => Object.values(grouped).flat(), [grouped]);
+
+  function selectResult(item: SearchResult) {
+    setOpen(false);
+    setQuery("");
+    router.push(item.url);
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setOpen(false);
+      event.currentTarget.blur();
+      return;
+    }
+    if (!flatResults.length) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex((index) => (index + 1) % flatResults.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex((index) => (index <= 0 ? flatResults.length - 1 : index - 1));
+    } else if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      selectResult(flatResults[activeIndex]);
+    }
+  }
 
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
@@ -76,7 +125,8 @@ export default function SearchBox() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
-          placeholder="Suche..."
+          onKeyDown={onKeyDown}
+          placeholder="Ligen, Teams, Spiele, Modelle suchen …"
           className="w-full rounded-md border border-neutral-200 bg-neutral-50 py-1.5 pl-8 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-phoenix-gold focus:bg-white focus:outline-none focus:ring-1 focus:ring-phoenix-gold"
         />
       </div>
@@ -99,19 +149,27 @@ export default function SearchBox() {
             Object.entries(grouped).map(([type, items]) => (
               <div key={type} className="border-b border-neutral-100 last:border-0">
                 <p className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
-                  {type}
+                  {searchTypeLabel(type)}
                 </p>
                 <ul className="pb-1">
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const index = flatResults.indexOf(item);
+                    return (
                     <li key={`${item.type}-${item.id}`}>
-                      <a
+                      <Link
                         href={item.url}
-                        className="block px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => {
+                          setOpen(false);
+                          setQuery("");
+                        }}
+                        className={`block px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50 ${activeIndex === index ? "bg-neutral-50" : ""}`}
                       >
                         {item.label}
-                      </a>
+                      </Link>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             ))}

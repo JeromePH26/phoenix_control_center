@@ -8,6 +8,7 @@ import JsonViewer from "@/components/ui/JsonViewer";
 import KeyValueList from "@/components/ui/KeyValueList";
 import LoadingState from "@/components/ui/LoadingState";
 import StateMessage from "@/components/ui/StateMessage";
+import { learningRunStepLabel, runStatusLabel, triggerLabel } from "@/lib/presentation";
 import type { LearningRun } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -17,16 +18,6 @@ function statusTone(status: string): "green" | "red" | "gold" | "neutral" {
   if (status === "failed") return "red";
   if (status === "running") return "gold";
   return "neutral";
-}
-
-const RUN_STATUS_LABEL: Record<string, string> = {
-  completed: "Fertig",
-  running: "Läuft",
-  failed: "Fehlgeschlagen",
-  pending: "Wartet",
-};
-function runStatusLabel(status: string): string {
-  return RUN_STATUS_LABEL[status] ?? status;
 }
 
 function formatDateTime(value: unknown): string {
@@ -119,8 +110,8 @@ export default function LearningRunDetailClient({ id }: { id: string }) {
           <Card title="Übersicht" action={<Badge tone={statusTone(run.status)}>{runStatusLabel(run.status)}</Badge>}>
             <KeyValueList
               data={{
-                Auslöser: run.trigger_type === "manual" ? "Manuell gestartet" : run.trigger_type === "scheduled" ? "Automatisch nach Zeitplan" : run.trigger_type,
-                Schritt: run.current_step,
+                Auslöser: triggerLabel(run.trigger_type),
+                Schritt: learningRunStepLabel(run.current_step),
                 "Ligen verarbeitet": run.leagues_processed,
                 "Märkte verarbeitet": run.markets_processed,
                 "Lernfähige Spiele": run.eligible_matches,

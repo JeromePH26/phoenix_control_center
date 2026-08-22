@@ -12,6 +12,7 @@ import KeyValueList from "@/components/ui/KeyValueList";
 import LoadingState from "@/components/ui/LoadingState";
 import Modal from "@/components/ui/Modal";
 import StateMessage from "@/components/ui/StateMessage";
+import { runStatusLabel, triggerLabel } from "@/lib/presentation";
 import type { JobRow, JobsPayload } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -31,7 +32,7 @@ const JOB_STATUS_LABEL: Record<string, string> = {
   pending: "Wartet",
 };
 function jobStatusLabel(status: string): string {
-  return JOB_STATUS_LABEL[status] ?? status;
+  return JOB_STATUS_LABEL[status] ?? runStatusLabel(status);
 }
 
 function fmt(value: unknown): string {
@@ -237,7 +238,7 @@ export default function JobsClient() {
     { header: "Status", cell: (j) => <Badge tone={statusTone(j.status)}>{jobStatusLabel(j.status)}</Badge> },
     {
       header: "Auslöser",
-      cell: (j) => (j.trigger_type === "manual" ? "Manuell gestartet" : j.trigger_type === "scheduled" ? "Automatisch nach Zeitplan" : fmt(j.trigger_type)),
+      cell: (j) => triggerLabel(j.trigger_type),
     },
     {
       header: "Ligen / Märkte / Challenger",

@@ -8,6 +8,7 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StateMessage from "@/components/ui/StateMessage";
 import { useLeagueNames } from "@/lib/useLeagueNames";
+import { humanizeCode, marketLabel } from "@/lib/presentation";
 import type { ModelVersion } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "unreachable" | "error";
@@ -25,7 +26,7 @@ const MODEL_STATUS_LABEL: Record<string, string> = {
   rejected: "Abgelehnt",
 };
 function modelStatusLabel(status: string): string {
-  return MODEL_STATUS_LABEL[status] ?? status;
+  return MODEL_STATUS_LABEL[status] ?? humanizeCode(status);
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -88,7 +89,7 @@ export default function ModelsClient() {
   const columns: Column<ModelVersion>[] = [
     { header: "Version", cell: (m) => <span className="font-medium text-neutral-900">{m.readable_version}</span> },
     { header: "Liga", cell: (m) => (m.league_id ? leagueName(m.league_id) : "Global") },
-    { header: "Markt", cell: (m) => fmt(m.market) },
+    { header: "Markt", cell: (m) => marketLabel(m.market) },
     {
       header: "Status",
       info: "champion = aktuell aktives Modell, das echte Tipps beeinflusst. challenger = Herausforderer, wird nur zum Vergleich getestet. retired = ausgemustert, nicht mehr aktiv.",
@@ -121,7 +122,7 @@ export default function ModelsClient() {
 
   const { title, description } = TITLES[status] ?? {
     title: "Modelle",
-    description: `Status: ${status}`,
+    description: `Status: ${modelStatusLabel(status)}`,
   };
 
   return (

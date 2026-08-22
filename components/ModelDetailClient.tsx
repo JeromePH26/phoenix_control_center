@@ -11,6 +11,7 @@ import KeyValueList from "@/components/ui/KeyValueList";
 import StateMessage from "@/components/ui/StateMessage";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useLeagueNames } from "@/lib/useLeagueNames";
+import { humanizeCode, marketLabel } from "@/lib/presentation";
 import type { ModelAuditLogEntry, ModelEvaluation, ModelLabOverview, ModelVersionDetail } from "@/lib/types";
 
 type LoadState = "loading" | "loaded" | "notfound" | "unreachable" | "error";
@@ -27,7 +28,7 @@ const MODEL_STATUS_LABEL: Record<string, string> = {
   rejected: "Abgelehnt",
 };
 function modelStatusLabel(status: string): string {
-  return MODEL_STATUS_LABEL[status] ?? status;
+  return MODEL_STATUS_LABEL[status] ?? humanizeCode(status);
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -56,7 +57,7 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   rollback: "Rollback durchgeführt",
 };
 function auditActionLabel(action: string): string {
-  return AUDIT_ACTION_LABEL[action] ?? action;
+  return AUDIT_ACTION_LABEL[action] ?? humanizeCode(action);
 }
 function auditReason(entry: ModelAuditLogEntry): string | null {
   const details = entry.details;
@@ -145,7 +146,7 @@ export default function ModelDetailClient({ id }: { id: string }) {
   const evaluationColumns: Column<ModelEvaluation>[] = [
     {
       header: "Testart",
-      cell: (e) => <Badge tone="neutral">{EVAL_TYPE_LABEL[e.evaluation_type] ?? e.evaluation_type}</Badge>,
+      cell: (e) => <Badge tone="neutral">{EVAL_TYPE_LABEL[e.evaluation_type] ?? humanizeCode(e.evaluation_type)}</Badge>,
     },
     {
       header: "Umfang",
@@ -205,7 +206,7 @@ export default function ModelDetailClient({ id }: { id: string }) {
             <KeyValueList
               data={{
                 Liga: model.league_id ? leagueName(model.league_id) : "Global",
-                Markt: model.market,
+                Markt: marketLabel(model.market),
                 Generation: model.generation,
                 "Übergeordnetes Modell": model.parent_model_id,
                 Zeitraum:
