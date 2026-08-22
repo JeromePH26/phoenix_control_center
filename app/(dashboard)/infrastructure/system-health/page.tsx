@@ -3,10 +3,14 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import KeyValueList from "@/components/ui/KeyValueList";
+import LastUpdated from "@/components/ui/LastUpdated";
 import StateMessage from "@/components/ui/StateMessage";
 import { backendFetch, safeJson } from "@/lib/backend";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
 import type { SystemHealth } from "@/lib/types";
+
+const AMPEL_LABEL: Record<string, string> = { green: "Alles in Ordnung", gold: "Beobachten", red: "Kritisch" };
+const AMPEL_TONE: Record<string, "green" | "gold" | "red"> = { green: "green", gold: "gold", red: "red" };
 
 function StatTile({ label, value, tone }: { label: string; value: number | string | null | undefined; tone?: "red" | "gold" }) {
   return (
@@ -59,6 +63,27 @@ export default async function SystemHealthPage() {
 
       {!errorState && health && (
         <>
+          <Card
+            title={
+              <span className="inline-flex items-center gap-1">
+                Gesamtstatus
+                <InfoTooltip text="Eine einzige Ampel aus denselben echten Signalen, die auch unten als Kacheln stehen - grün nur, wenn wirklich nichts auffällig ist." />
+              </span>
+            }
+            action={<LastUpdated iso={health.ampel.checkedAt} />}
+          >
+            <Badge tone={AMPEL_TONE[health.ampel.status] ?? "neutral"}>{AMPEL_LABEL[health.ampel.status] ?? health.ampel.status}</Badge>
+            {health.ampel.reasons.length > 0 ? (
+              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm text-neutral-600">
+                {health.ampel.reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-neutral-400">Keine Auffälligkeiten.</p>
+            )}
+          </Card>
+
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <StatTile label="App-Status" value={health.appStatus.status as string} tone={health.appStatus.status === "ACTIVE" ? undefined : "red"} />
             <StatTile label="Offene Tickets" value={health.openTicketCount} tone={health.openTicketCount > 0 ? "gold" : undefined} />

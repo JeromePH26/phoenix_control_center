@@ -795,11 +795,47 @@ export interface FailedLoginAttempt {
   attempted_at?: string | null;
 }
 
+// Section 28 (AN2): "echte Ampel mit Ursachen und letzten Aktualisierungen".
+export interface SystemAmpel {
+  status: "green" | "gold" | "red" | string;
+  reasons: string[];
+  checkedAt: string;
+}
+
+export interface DatabaseIndexRow {
+  table: string;
+  index: string;
+  sizeBytes: number;
+  scans: number;
+}
+
+export interface SlowQueryRow {
+  query: string;
+  calls: number;
+  meanExecMs: number;
+  maxExecMs: number;
+}
+
+export interface DatabaseSizeSnapshot {
+  size_bytes: number;
+  recorded_at: string;
+}
+
 export interface SystemHealth {
+  ampel: SystemAmpel;
   apiUsage: Record<string, unknown>[];
   pendingJobs: { footballDailyPipeline: number; footballMatchSettlement: number };
   appStatus: Record<string, unknown>;
-  database: { sizeBytes: number; largestTables: { table: string; rows: number }[] };
+  database: {
+    sizeBytes: number;
+    largestTables: { table: string; rows: number }[];
+    // Section 28 (AN2): Indizes, Warnschwellen, Größenverlauf.
+    indexes?: DatabaseIndexRow[];
+    slowQueries?: SlowQueryRow[] | null;
+    slowQueriesAvailable?: boolean;
+    sizeLimitMb?: number | null;
+    sizeHistory?: DatabaseSizeSnapshot[];
+  };
   openTicketCount: number;
   openIncidentCount: number;
 }
